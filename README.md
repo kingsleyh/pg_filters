@@ -38,6 +38,11 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
     assert_eq!(sql, " WHERE age > 18 AND name = 'John' ORDER BY name ASC LIMIT 10 OFFSET 0");
 ```
 
+### Note
+
+* filter rules are sorted by column so in the above case age goes first and then name (with the AND conditional operator) - where you might have expected `name == 'John' OR age > 18` because of the sorting it put age first so `age > 18 AND name = 'John'`
+
+
 Along with the sql it also returns objects containing the pagination, sorting and filtering that has been applied e.g :
 
 ```rust
