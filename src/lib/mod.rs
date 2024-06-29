@@ -21,6 +21,22 @@ pub struct PaginationOptions {
     pub total_records: i64,
 }
 
+impl PaginationOptions {
+    pub fn new(
+        current_page: i64,
+        per_page: i64,
+        per_page_limit: i64,
+        total_records: i64,
+    ) -> PaginationOptions {
+        PaginationOptions {
+            current_page,
+            per_page,
+            per_page_limit,
+            total_records,
+        }
+    }
+}
+
 impl PgFilters {
     pub fn new(
         pagination: Option<PaginationOptions>,

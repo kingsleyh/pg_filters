@@ -13,18 +13,14 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
             total_records: 1000,
         }),
         vec![
+            SortedColumn::new("age".into(), "desc".into()),
             SortedColumn {
                 column: "name".to_string(),
                 order: SortOrder::Asc,
             },
         ],
         vec![
-            FilteringRule {
-                column: "name".to_string(),
-                filter_operator: FilterOperator::Equal,
-                conditional_operator: ConditionalOperator::And,
-                value: FilterValue::String("John".to_string()),
-            },
+            FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
             FilteringRule {
                 column: "age".to_string(),
                 filter_operator: FilterOperator::GreaterThan,
@@ -35,12 +31,12 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
     );
 
    let sql = filters.sql();
-    assert_eq!(sql, " WHERE age > 18 AND name = 'John' ORDER BY name ASC LIMIT 10 OFFSET 0");
+    assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 ```
 
 ### Note
 
-* filter rules are sorted by column so in the above case age goes first and then name (with the AND conditional operator) - where you might have expected `name = 'John' OR age > 18` because of the sorting it put age first so `age > 18 AND name = 'John'`
+* filter rules are applied in the order which they are supplied
 
 
 Along with the sql it also returns objects containing the pagination, sorting and filtering that has been applied e.g :
