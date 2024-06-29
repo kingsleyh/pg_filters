@@ -15,14 +15,14 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
         vec![
             SortedColumn::new("age".into(), "desc".into()),
             SortedColumn {
-                column: "name".to_string(),
+                column: "name".into(),
                 order: SortOrder::Asc,
             },
         ],
         vec![
             FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
             FilteringRule {
-                column: "age".to_string(),
+                column: "age".into(),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
