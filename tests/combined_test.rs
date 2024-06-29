@@ -32,7 +32,7 @@ fn test_filtering_with_sorting_with_pagination() {
     );
 
    let sql = filters.sql();
-    assert_eq!(sql, " WHERE age > 18 AND name = 'John' ORDER BY name ASC LIMIT 10 OFFSET 0");
+    assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0");
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn test_filtering_without_sorting_with_pagination() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE age > 18 AND name = 'John' LIMIT 10 OFFSET 0");
+    assert_eq!(sql, " WHERE name = 'John' OR age > 18 LIMIT 10 OFFSET 0");
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn test_filtering_with_sorting_without_pagination() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE age > 18 AND name = 'John' ORDER BY name ASC");
+    assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY name ASC");
 }
 
 #[test]
@@ -117,7 +117,7 @@ fn test_filtering_without_sorting_without_pagination() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE age > 18 AND name = 'John'");
+    assert_eq!(sql, " WHERE name = 'John' OR age > 18");
 }
 
 #[test]
@@ -211,7 +211,7 @@ fn test_filtering_with_sorting_with_pagination_with_empty_sorting() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE age > 18 AND name = 'John' LIMIT 10 OFFSET 0");
+    assert_eq!(sql, " WHERE name = 'John' OR age > 18 LIMIT 10 OFFSET 0");
 }
 
 #[test]
@@ -258,6 +258,6 @@ fn test_with_many_filters_and_many_sorting_and_pagination() {
     let sql = filters.sql();
     assert_eq!(
         sql,
-        " WHERE age > 18 AND email LIKE 'gmail.com' AND name = 'John' ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
+        " WHERE name = 'John' OR age > 18 AND email LIKE '%gmail.com%' ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
     );
 }

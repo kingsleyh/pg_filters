@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FilterValue {
     String(String),
     Int(i64),
@@ -14,7 +14,63 @@ pub struct FilteringRule {
     pub value: FilterValue,
 }
 
-#[derive(Debug, Clone)]
+impl FilteringRule {
+    pub fn new(
+        column: String,
+        filter_operator: String,
+        conditional_operator: String,
+        value: String,
+    ) -> FilteringRule {
+        let filter_operator = match filter_operator.to_uppercase().as_str() {
+            "=" => FilterOperator::Equal,
+            "!=" => FilterOperator::NotEqual,
+            ">" => FilterOperator::GreaterThan,
+            ">=" => FilterOperator::GreaterThanOrEqual,
+            "<" => FilterOperator::LessThan,
+            "<=" => FilterOperator::LessThanOrEqual,
+            "LIKE" => FilterOperator::Like,
+            "NOT LIKE" => FilterOperator::NotLike,
+            "IN" => FilterOperator::In,
+            "NOT IN" => FilterOperator::NotIn,
+            "IS NULL" => FilterOperator::IsNull,
+            "IS NOT NULL" => FilterOperator::IsNotNull,
+            _ => FilterOperator::Equal,
+        };
+
+        let conditional_operator = match conditional_operator.to_uppercase().as_str() {
+            "AND" => ConditionalOperator::And,
+            "OR" => ConditionalOperator::Or,
+            _ => ConditionalOperator::And,
+        };
+
+        let value = match filter_operator {
+            FilterOperator::In | FilterOperator::NotIn => FilterValue::String(value),
+            FilterOperator::IsNull | FilterOperator::IsNotNull => {
+                FilterValue::String("".to_string())
+            }
+            _ => {
+                if value.parse::<i64>().is_ok() {
+                    FilterValue::Int(value.parse::<i64>().unwrap())
+                } else if value.parse::<f64>().is_ok() {
+                    FilterValue::Float(value.parse::<f64>().unwrap())
+                } else if value.to_lowercase() == "true" || value.to_lowercase() == "false" {
+                    FilterValue::Bool(value.parse::<bool>().unwrap())
+                } else {
+                    FilterValue::String(value)
+                }
+            }
+        };
+
+        FilteringRule {
+            column,
+            filter_operator,
+            conditional_operator,
+            value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ConditionalOperator {
     And,
     Or,
@@ -44,10 +100,6 @@ pub struct Filtering {
 
 impl Filtering {
     pub fn new(rules: Vec<FilteringRule>) -> Filtering {
-        let mut rules = rules;
-        rules.sort_by(|a, b| a.column.cmp(&b.column));
-        rules.dedup_by(|a, b| a.column == b.column);
-
         let mut sql = if rules.len() > 0 {
             " WHERE ".to_string()
         } else {
@@ -122,6 +174,14 @@ impl Filtering {
             {
                 // remove the single quotes from the start and end of the string if present
                 let filter_value = filter_value.trim_matches('\'');
+                sql.push_str(&filter_value);
+            } else if rule.filter_operator == FilterOperator::Like
+                || rule.filter_operator == FilterOperator::NotLike
+            {
+                // add the % sign both at start and end of string
+                let filter_value = filter_value.trim_matches('\'');
+                let filter_value = format!("'%{}%'", filter_value);
+
                 sql.push_str(&filter_value);
             } else if rule.filter_operator != FilterOperator::IsNull
                 && rule.filter_operator != FilterOperator::IsNotNull

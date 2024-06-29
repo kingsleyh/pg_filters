@@ -10,6 +10,20 @@ pub struct SortedColumn {
     pub order: SortOrder,
 }
 
+impl SortedColumn {
+    pub fn new(column: &str, order: String) -> SortedColumn {
+        let order = match order.to_lowercase().as_str() {
+            "asc" => SortOrder::Asc,
+            "desc" => SortOrder::Desc,
+            _ => SortOrder::Asc,
+        };
+        SortedColumn {
+            column: column.to_string(),
+            order,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Sorting {
     pub columns: Vec<SortedColumn>,

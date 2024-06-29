@@ -17,7 +17,7 @@ fn test_filtering() {
         },
     ]);
     assert_eq!(filtering.filters.len(), 2);
-    assert_eq!(filtering.sql, " WHERE age > 18 AND name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR age > 18");
 }
 
 #[test]
@@ -36,8 +36,8 @@ fn test_filtering_with_duplicate_columns() {
             value: FilterValue::String("Doe".to_string()),
         },
     ]);
-    assert_eq!(filtering.filters.len(), 1);
-    assert_eq!(filtering.sql, " WHERE name = 'John'");
+    assert_eq!(filtering.filters.len(), 2);
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR name = 'Doe'");
 }
 
 #[test]
@@ -76,7 +76,7 @@ fn test_filtering_with_multiple_rules() {
         },
     ]);
     assert_eq!(filtering.filters.len(), 2);
-    assert_eq!(filtering.sql, " WHERE age > 18 AND name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR age > 18");
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn test_filtering_with_multiple_rules_swapped() {
         },
     ]);
     assert_eq!(filtering.filters.len(), 2);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18");
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn test_filtering_with_multiple_rules_and_different_operators() {
         },
     ]);
     assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 AND city = 'New York' AND name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR age > 18 AND city = 'New York'");
 }
 
 #[test]
@@ -148,7 +148,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
         },
     ]);
     assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR city = 'New York' OR name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18 OR city = 'New York'");
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped_and_mixed(
         },
     ]);
     assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR city = 'New York' AND name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18 OR city = 'New York'");
 }
 
 #[test]
@@ -258,7 +258,7 @@ fn test_filtering_with_like_rule() {
         value: FilterValue::String("John".to_string()),
     }]);
     assert_eq!(filtering.filters.len(), 1);
-    assert_eq!(filtering.sql, " WHERE name LIKE 'John'");
+    assert_eq!(filtering.sql, " WHERE name LIKE '%John%'");
 }
 
 #[test]
@@ -270,7 +270,7 @@ fn test_filtering_with_not_like_rule() {
         value: FilterValue::String("John".to_string()),
     }]);
     assert_eq!(filtering.filters.len(), 1);
-    assert_eq!(filtering.sql, " WHERE name NOT LIKE 'John'");
+    assert_eq!(filtering.sql, " WHERE name NOT LIKE '%John%'");
 }
 
 #[test]
@@ -356,7 +356,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
         },
     ]);
     assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 AND city LIKE 'New York' AND name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR age > 18 AND city LIKE '%New York%'");
 }
 
 #[test]
@@ -382,7 +382,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
         },
     ]);
     assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR city LIKE 'New York' OR name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18 OR city LIKE '%New York%'");
 }
 
 #[test]
@@ -408,7 +408,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
         },
     ]);
     assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR city LIKE 'New York' AND name = 'John'");
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18 OR city LIKE '%New York%'");
 }
 
 #[test]
@@ -439,8 +439,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
             value: FilterValue::String("Doe".to_string()),
         },
     ]);
-    assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR city LIKE 'New York' AND name = 'John'");
+    assert_eq!(filtering.filters.len(), 4);
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18 OR city LIKE '%New York%' OR name = 'Doe'");
 }
 
 #[test]
@@ -471,7 +471,7 @@ fn test_filtering_with_many_rules_and_conditions_with_no_duplicates_with_or_and_
             value: FilterValue::String("Doe".to_string()),
         },
     ]);
-    assert_eq!(filtering.filters.len(), 3);
-    assert_eq!(filtering.sql, " WHERE age > 18 OR city LIKE 'New York' OR name = 'John'");
+    assert_eq!(filtering.filters.len(), 4);
+    assert_eq!(filtering.sql, " WHERE name = 'John' AND age > 18 OR city LIKE '%New York%' AND name = 'Doe'");
   
 }
