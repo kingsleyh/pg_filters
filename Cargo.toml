@@ -1,0 +1,10 @@
+[package]
+name = "pg_filters"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "pg_filters"
+path = "src/lib/mod.rs"
+
+[dependencies]
