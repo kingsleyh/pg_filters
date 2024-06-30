@@ -1,11 +1,11 @@
 [package]
 name = "pg_filters"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Kingsley Hendrickse <kingsley.hendrickse@gmail.com>"]
 description = "A simple rust helper to generate postgres sql for pagination, sorting and filtering"
 license = "Apache-2.0 OR MIT"
-documentation = "https://docs.rs/ag-grid-rs/latest/ag_grid_rs/"
+documentation = "https://docs.rs/pg_filters/latest/pg_filters/"
 readme = "README.md"
 homepage = "https://github.com/kingsleyh/pg_filters"
 repository = "https://github.com/kingsleyh/pg_filters"
