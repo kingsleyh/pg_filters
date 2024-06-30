@@ -129,7 +129,7 @@ impl Sorting {
         columns.sort_by(|a, b| a.column.cmp(&b.column));
         columns.dedup_by(|a, b| a.column == b.column);
 
-        let mut sql = if columns.len() > 0 {
+        let mut sql = if !columns.is_empty() {
             " ORDER BY ".to_string()
         } else {
             "".to_string()

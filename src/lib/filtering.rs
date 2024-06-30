@@ -272,7 +272,7 @@ pub struct Filtering {
 ///
 impl Filtering {
     pub fn new(rules: Vec<FilteringRule>) -> Filtering {
-        let mut sql = if rules.len() > 0 {
+        let mut sql = if !rules.is_empty() {
             " WHERE ".to_string()
         } else {
             "".to_string()
@@ -293,7 +293,7 @@ impl Filtering {
                 }
             }
             sql.push_str(&rule.column);
-            sql.push_str(" ");
+            sql.push(' ');
             match rule.filter_operator {
                 FilterOperator::Equal => {
                     sql.push_str("= ");
@@ -346,7 +346,7 @@ impl Filtering {
             {
                 // remove the single quotes from the start and end of the string if present
                 let filter_value = filter_value.trim_matches('\'');
-                sql.push_str(&filter_value);
+                sql.push_str(filter_value);
             } else if rule.filter_operator == FilterOperator::Like
                 || rule.filter_operator == FilterOperator::NotLike
             {
