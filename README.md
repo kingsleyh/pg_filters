@@ -23,7 +23,7 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
             SortedColumn::new("name".into(), "asc".into()),
         ],
         vec![
-            FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
+            FilteringRule::new("where".into(), "name".into(), "=".into(), "John".into()),
             FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
         ],
     );
@@ -36,6 +36,7 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
 
 * filter rules are applied in the order which they are supplied
 * sorting is applied after sorting on column name alphabetically (duplicates are removed)
+* for readability on the first filtering rule you can use `where` - anything other than AND/OR defaults to AND
 
 ## Valid Filtering Options
 
