@@ -1,22 +1,22 @@
 //! Pagination struct and methods
-//! 
+//!
 //! Pagination struct holds the current page, previous page, next page, total pages, number of records per page and total records
-//! 
+//!
 //! Pagination struct has a new method that takes the current page, number of records per page, total pages and total records and returns a Pagination struct
 //!
 //! Paginate struct holds the pagination struct and the SQL LIMIT and OFFSET clause
 
 /// Pagination struct
-/// 
+///
 /// Pagination struct holds the current page, previous page, next page, total pages, number of records per page and total records
-/// 
+///
 /// Pagination struct has a new method that takes the current page, number of records per page, total pages and total records and returns a Pagination struct
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use pg_filters::pagination::Pagination;
-/// 
+///
 /// let pagination = Pagination::new(1, 10, 100, 1000);
 /// assert_eq!(pagination.current_page, 1);
 /// assert_eq!(pagination.previous_page, 1);
@@ -25,8 +25,8 @@
 /// assert_eq!(pagination.per_page, 10);
 /// assert_eq!(pagination.total_records, 1000);
 /// ```
-/// 
-#[derive(Debug, Clone)] 
+///
+#[derive(Debug, Clone)]
 pub struct Pagination {
     pub current_page: i64,
     pub previous_page: i64,
@@ -37,14 +37,14 @@ pub struct Pagination {
 }
 
 /// New function for Pagination
-/// 
+///
 /// Pagination struct has a new method that takes the current page, number of records per page, total pages and total records and returns a Pagination struct
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use pg_filters::pagination::Pagination;
-/// 
+///
 /// let pagination = Pagination::new(1, 10, 100, 1000);
 /// assert_eq!(pagination.current_page, 1);
 /// assert_eq!(pagination.previous_page, 1);
@@ -53,7 +53,7 @@ pub struct Pagination {
 /// assert_eq!(pagination.per_page, 10);
 /// assert_eq!(pagination.total_records, 1000);
 /// ```
-/// 
+///
 impl Pagination {
     pub fn new(
         current_page: i64,
@@ -93,14 +93,14 @@ pub struct Paginate {
 }
 
 /// New function for Paginate
-/// 
+///
 /// Paginate struct has a new method that takes the current page, number of records per page, maximum number of records per page and total records and returns a Paginate struct
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use pg_filters::pagination::Paginate;
-/// 
+///
 /// let paginate = Paginate::new(1, 10, 10, 1000);
 /// assert_eq!(paginate.pagination.current_page, 1);
 /// assert_eq!(paginate.pagination.previous_page, 1);
@@ -110,7 +110,7 @@ pub struct Paginate {
 /// assert_eq!(paginate.pagination.total_records, 1000);
 /// assert_eq!(paginate.sql, "LIMIT 10 OFFSET 0");
 /// ```
-/// 
+///
 impl Paginate {
     pub fn new(
         current_page: i64,

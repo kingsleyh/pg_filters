@@ -1,41 +1,41 @@
 //! This module contains the structures and functions to handle filtering rules
-//! 
+//!
 //! The FilteringRule structure is used to define a rule for filtering data
 //! The Filtering structure is used to define a set of filtering rules
-//! 
+//!
 //! # Examples
-//! 
+//!
 //! ```rust
 //! use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, Filtering, ConditionalOperator};
 //!     
 //! let filtering_rule = FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into());
-//! 
+//!
 //! assert_eq!(filtering_rule.column, "name");
 //! assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
 //! assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::And);
 //! assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
 //! ```
-//! 
+//!
 
 /// The FilterValue enum is used to define the value of a filtering rule
-/// 
+///
 /// The FilterValue enum can be one of the following:
-/// 
+///
 /// * String
 /// * Int
 /// * Float
 /// * Bool
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::FilterValue;
-/// 
+///
 /// let filter_value = FilterValue::String("John".into());
-/// 
+///
 /// assert_eq!(filter_value, FilterValue::String("John".into()));
 /// ```
-/// 
+///
 #[derive(Debug, Clone, PartialEq)]
 pub enum FilterValue {
     String(String),
@@ -45,27 +45,27 @@ pub enum FilterValue {
 }
 
 /// The FilteringRule structure is used to define a rule for filtering data
-/// 
+///
 /// The FilteringRule structure contains the following fields:
-/// 
+///
 /// * column: The name of the column to filter
 /// * filter_operator: The operator to use for filtering
 /// * conditional_operator: The operator to use to combine this rule with the next rule
 /// * value: The value to use for filtering
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ConditionalOperator};
-/// 
+///
 /// let filtering_rule = FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into());
-/// 
+///
 /// assert_eq!(filtering_rule.column, "name");
 /// assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
 /// assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::And);
 /// assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
 /// ```
-/// 
+///
 #[derive(Debug, Clone)]
 pub struct FilteringRule {
     /// The name of the column to filter
@@ -81,25 +81,25 @@ pub struct FilteringRule {
 /// The FilteringRule structure is used to define a rule for filtering data
 ///
 /// The FilteringRule structure contains the following fields:
-/// 
+///
 /// * column: The name of the column to filter
 /// * filter_operator: The operator to use for filtering
 /// * conditional_operator: The operator to use to combine this rule with the next rule
 /// * value: The value to use for filtering
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ConditionalOperator};
-/// 
+///
 /// let filtering_rule = FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into());
-/// 
+///
 /// assert_eq!(filtering_rule.column, "name");
 /// assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
 /// assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::And);
 /// assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
 /// ```
-/// 
+///
 impl FilteringRule {
     pub fn new(
         column: String,
@@ -156,24 +156,23 @@ impl FilteringRule {
     }
 }
 
-
 /// The ConditionalOperator enum is used to define the operator to use to combine filtering rules
-/// 
+///
 /// The ConditionalOperator enum can be one of the following:
-/// 
+///
 /// * And
 /// * Or
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::ConditionalOperator;
-/// 
+///
 /// let conditional_operator = ConditionalOperator::And;
-/// 
+///
 /// assert_eq!(conditional_operator, ConditionalOperator::And);
 /// ```
-/// 
+///
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConditionalOperator {
     And,
@@ -181,9 +180,9 @@ pub enum ConditionalOperator {
 }
 
 /// The FilterOperator enum is used to define the operator to use for filtering
-/// 
+///
 /// The FilterOperator enum can be one of the following:
-/// 
+///
 /// * Equal
 /// * NotEqual
 /// * GreaterThan
@@ -196,17 +195,17 @@ pub enum ConditionalOperator {
 /// * NotIn
 /// * IsNull
 /// * IsNotNull
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::FilterOperator;
-/// 
+///
 /// let filter_operator = FilterOperator::Equal;
-/// 
+///
 /// assert_eq!(filter_operator, FilterOperator::Equal);
 /// ```
-/// 
+///
 #[derive(Debug, Clone, PartialEq)]
 pub enum FilterOperator {
     Equal,
@@ -224,26 +223,26 @@ pub enum FilterOperator {
 }
 
 /// The Filtering structure is used to define a set of filtering rules
-/// 
+///
 /// The Filtering structure contains the following fields:
-/// 
+///
 /// * filters: A vector of FilteringRule structures
 /// * sql: The SQL string generated from the filtering rules
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::{Filtering, FilteringRule};
-/// 
+///
 /// let filters = Filtering::new(vec![
 ///    FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
 ///   FilteringRule::new("age".into(), ">".into(), "or".into(), "18".into()),
 /// ]);
-/// 
+///
 /// assert_eq!(filters.filters.len(), 2);
 /// assert_eq!(filters.sql, " WHERE name = 'John' OR age > 18");
 /// ```
-/// 
+///
 #[derive(Debug, Clone)]
 pub struct Filtering {
     pub filters: Vec<FilteringRule>,
@@ -251,26 +250,26 @@ pub struct Filtering {
 }
 
 /// The Filtering structure is used to define a set of filtering rules
-/// 
+///
 /// The Filtering structure contains the following fields:
-/// 
+///
 /// * filters: A vector of FilteringRule structures
 /// * sql: The SQL string generated from the filtering rules
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```rust
 /// use pg_filters::filtering::{Filtering, FilteringRule};
-/// 
+///
 /// let filters = Filtering::new(vec![
 ///   FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
 ///  FilteringRule::new("age".into(), ">".into(), "or".into(), "18".into()),
 /// ]);
-/// 
+///
 /// assert_eq!(filters.filters.len(), 2);
 /// assert_eq!(filters.sql, " WHERE name = 'John' OR age > 18");
 /// ```
-/// 
+///
 impl Filtering {
     pub fn new(rules: Vec<FilteringRule>) -> Filtering {
         let mut sql = if rules.len() > 0 {

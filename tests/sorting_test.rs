@@ -106,7 +106,10 @@ fn test_sorting_with_multiple_columns_desc() {
         },
     ]);
     assert_eq!(sorting.columns.len(), 3);
-    assert_eq!(sorting.sql, " ORDER BY age DESC, created_at DESC, name DESC");
+    assert_eq!(
+        sorting.sql,
+        " ORDER BY age DESC, created_at DESC, name DESC"
+    );
 }
 
 #[test]

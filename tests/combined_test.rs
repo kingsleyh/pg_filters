@@ -1,4 +1,8 @@
-use pg_filters::{filtering::{ConditionalOperator, FilterOperator, FilterValue, FilteringRule}, sorting::{SortOrder, SortedColumn}, PaginationOptions, PgFilters};
+use pg_filters::{
+    filtering::{ConditionalOperator, FilterOperator, FilterValue, FilteringRule},
+    sorting::{SortOrder, SortedColumn},
+    PaginationOptions, PgFilters,
+};
 
 #[test]
 fn test_filtering_with_sorting_with_pagination() {
@@ -9,12 +13,10 @@ fn test_filtering_with_sorting_with_pagination() {
             per_page_limit: 10,
             total_records: 1000,
         }),
-        vec![
-            SortedColumn {
-                column: "name".to_string(),
-                order: SortOrder::Asc,
-            },
-        ],
+        vec![SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        }],
         vec![
             FilteringRule {
                 column: "name".to_string(),
@@ -31,8 +33,11 @@ fn test_filtering_with_sorting_with_pagination() {
         ],
     );
 
-   let sql = filters.sql();
-    assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0");
+    let sql = filters.sql();
+    assert_eq!(
+        sql,
+        " WHERE name = 'John' OR age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0"
+    );
 }
 
 #[test]
@@ -69,12 +74,10 @@ fn test_filtering_without_sorting_with_pagination() {
 fn test_filtering_with_sorting_without_pagination() {
     let filters = PgFilters::new(
         None,
-        vec![
-            SortedColumn {
-                column: "name".to_string(),
-                order: SortOrder::Asc,
-            },
-        ],
+        vec![SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        }],
         vec![
             FilteringRule {
                 column: "name".to_string(),
@@ -129,12 +132,10 @@ fn test_filtering_with_sorting_with_pagination_with_empty_filters() {
             per_page_limit: 10,
             total_records: 1000,
         }),
-        vec![
-            SortedColumn {
-                column: "name".to_string(),
-                order: SortOrder::Asc,
-            },
-        ],
+        vec![SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        }],
         vec![],
     );
 
@@ -163,12 +164,10 @@ fn test_filtering_without_sorting_with_pagination_with_empty_filters() {
 fn test_filtering_with_sorting_without_pagination_with_empty_filters() {
     let filters = PgFilters::new(
         None,
-        vec![
-            SortedColumn {
-                column: "name".to_string(),
-                order: SortOrder::Asc,
-            },
-        ],
+        vec![SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        }],
         vec![],
     );
 

@@ -1,10 +1,10 @@
 //! PgFilters - a simple library to handle pagination, sorting and filtering in Postgres
-//! 
+//!
 //! # Examples
-//! 
+//!
 //! ```rust
 //! use pg_filters::{filtering::{FilteringRule}, sorting::{SortedColumn}, PaginationOptions, PgFilters};
-//! 
+//!
 //!let filters = PgFilters::new(
 //!    Some(PaginationOptions {
 //!        current_page: 1,
@@ -23,30 +23,30 @@
 //!);
 //!
 //!let sql = filters.sql();
-//!assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"); 
+//!assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 //! ```
-//! 
+//!
 //! # Notes
-//! 
+//!
 //! This library is designed to work with Postgres databases
 //! The total_records field in PaginationOptions must be fetched from the database
-//! 
+//!
 //! ### Valid Filter Values
 //!
 //!* can be upper or lower case
 //!
 //!"="
 //!"!="
-//!">" 
+//!">"
 //!">="
-//!"<" 
+//!"<"
 //!"<="
-//!"LIKE" 
+//!"LIKE"
 //!"NOT LIKE"
 //!"IN"
-//!"NOT IN" 
+//!"NOT IN"
 //!"IS NULL"
-//!"IS NOT NULL" 
+//!"IS NOT NULL"
 //!
 //!
 //!### Valid Conditional Filter Values
@@ -113,7 +113,7 @@ impl PaginationOptions {
 /// pagination is an Option<PaginationOptions>
 /// sorting_columns is a Vec<SortedColumn>
 /// filtering_rules is a Vec<FilteringRule>
-/// 
+///
 impl PgFilters {
     pub fn new(
         pagination: Option<PaginationOptions>,
