@@ -33,28 +33,28 @@
 //!
 //! ### Valid Filter Values
 //!
-//!* can be upper or lower case
+//! can be upper or lower case
 //!
-//!"="
-//!"!="
-//!">"
-//!">="
-//!"<"
-//!"<="
-//!"LIKE"
-//!"NOT LIKE"
-//!"IN"
-//!"NOT IN"
-//!"IS NULL"
-//!"IS NOT NULL"
+//! * "="
+//! * "!="
+//! * ">"
+//! * ">="
+//! * "<"
+//! * "<="
+//! * "LIKE"
+//! * "NOT LIKE"
+//! * "IN"
+//! * "NOT IN"
+//! * "IS NULL"
+//! * "IS NOT NULL"
 //!
 //!
-//!### Valid Conditional Filter Values
+//! ### Valid Conditional Filter Values
 //!
-//!* can be upper or lower case
+//! can be upper or lower case
 //!
-//!"AND"
-//!"OR"
+//! * "AND"
+//! * "OR"
 //!
 //!
 use filtering::{Filtering, FilteringRule};
