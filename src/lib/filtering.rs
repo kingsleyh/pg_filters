@@ -339,8 +339,6 @@ impl Filtering {
                 FilterValue::Bool(value) => value.to_string(),
             };
 
-            // if rule.operator == FilterOperator::In || rule.operator == FilterOperator::NotIn then wrap the value in parentheses
-            // if rule.operator == FilterOperator::Null || rule.operator == FilterOperator::NotNull then don't add the value
             if rule.filter_operator == FilterOperator::In
                 || rule.filter_operator == FilterOperator::NotIn
             {
