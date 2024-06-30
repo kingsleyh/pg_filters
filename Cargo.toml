@@ -9,7 +9,7 @@ documentation = "https://docs.rs/ag-grid-rs/latest/ag_grid_rs/"
 readme = "README.md"
 homepage = "https://github.com/kingsleyh/pg_filters"
 repository = "https://github.com/kingsleyh/pg_filters"
-keywords = ["postgres", "pagination", "filtering", "sorting", "sql", "database"]
+keywords = ["postgres", "pagination", "filtering", "sorting", "sql"]
 categories = ["data-structures", "web-programming"]
 
 [lib]
