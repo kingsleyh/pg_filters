@@ -1,11 +1,15 @@
 # PG Filters
 
+[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/kingsleyh/pg_filters#license)
+[![Docs](https://docs.rs/pg_filters/badge.svg)](https://docs.rs/pg_filters/latest/pg_filters/)
+[![Test](https://github.com/kingsleyh/pg_filters/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kingsleyh/pg_filters/actions/workflows/ci.yml)
+
 A simple rust helper to generate postgres sql for pagination, sorting and filtering
 
 ## Usage
 
 ```rust
- let filters = PgFilters::new(
+    let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
             per_page: 10,
@@ -14,23 +18,15 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
         }),
         vec![
             SortedColumn::new("age".into(), "desc".into()),
-            SortedColumn {
-                column: "name".into(),
-                order: SortOrder::Asc,
-            },
+            SortedColumn::new("name".into(), "asc".into()),
         ],
         vec![
             FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
-            FilteringRule {
-                column: "age".into(),
-                filter_operator: FilterOperator::GreaterThan,
-                conditional_operator: ConditionalOperator::Or,
-                value: FilterValue::Int(18),
-            },
+            FilteringRule::new("age".into(), ">".into(), "or".into(), "18".into()),
         ],
     );
 
-   let sql = filters.sql();
+    let sql = filters.sql();
     assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 ```
 
@@ -61,3 +57,9 @@ Along with the sql it also returns objects containing the pagination, sorting an
 ```
 
 see the tests for more examples
+
+# License
+
+Licensed under either of these:
+- MIT([https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT)) 
+- Apache-2.0([https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)) 

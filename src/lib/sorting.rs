@@ -1,15 +1,71 @@
-#[derive(Debug, Clone)]
+//! Sorting module
+//! 
+//! This module contains the Sorting struct and its implementation
+//! 
+//! The Sorting struct is used to generate the ORDER BY clause in SQL queries
+//! 
+//! # Example
+//! 
+//! ```rust
+//! use pg_filters::sorting::{SortedColumn, Sorting};
+//! 
+//! let sorting = Sorting::new(vec![
+//!    SortedColumn::new("name", "asc".to_string()),
+//!    SortedColumn::new("age", "desc".to_string()),
+//! ]);
+//! 
+//! assert_eq!(sorting.columns.len(), 2);
+//! assert_eq!(sorting.sql, " ORDER BY age DESC, name ASC");
+//! ```
+//! 
+
+
+/// SortOrder enum
+/// 
+/// This enum is used to specify the sorting order of a column
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use pg_filters::sorting::SortOrder;
+/// 
+/// let order = SortOrder::Asc;
+/// 
+/// assert_eq!(order, SortOrder::Asc);
+/// ```
+#[derive(Debug, Clone, PartialEq)]
 pub enum SortOrder {
     Asc,
     Desc,
 }
 
+/// SortedColumn struct
+/// 
+/// This struct is used to hold the column name and sorting order
 #[derive(Debug, Clone)]
 pub struct SortedColumn {
+    /// Column name
     pub column: String,
+    /// Sorting order
     pub order: SortOrder,
 }
 
+/// New function for SortedColumn
+/// 
+/// This function takes a column name and sorting order and returns a SortedColumn struct
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use pg_filters::sorting::SortedColumn;
+/// use pg_filters::sorting::SortOrder;
+/// 
+/// let column = SortedColumn::new("name", "asc".to_string());
+/// 
+/// assert_eq!(column.column, "name");
+/// assert_eq!(column.order, SortOrder::Asc);
+/// ```
+/// 
 impl SortedColumn {
     pub fn new(column: &str, order: String) -> SortedColumn {
         let order = match order.to_lowercase().as_str() {
@@ -24,12 +80,50 @@ impl SortedColumn {
     }
 }
 
+/// Sorting struct
+/// 
+/// This struct is used to generate the ORDER BY clause in SQL queries
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use pg_filters::sorting::{SortedColumn, Sorting};
+/// 
+/// let sorting = Sorting::new(vec![
+///    SortedColumn::new("name", "asc".to_string()),
+///    SortedColumn::new("age", "desc".to_string()),
+/// ]);
+/// 
+/// assert_eq!(sorting.columns.len(), 2);
+/// assert_eq!(sorting.sql, " ORDER BY age DESC, name ASC");
+/// ```
+/// 
 #[derive(Debug, Clone)]
 pub struct Sorting {
+    /// Vector of SortedColumn structs
     pub columns: Vec<SortedColumn>,
+    /// SQL ORDER BY clause
     pub sql: String,
 }
 
+/// New function for Sorting
+/// 
+/// This function takes a vector of SortedColumn structs and returns a Sorting struct
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use pg_filters::sorting::{SortedColumn, Sorting};
+/// 
+/// let sorting = Sorting::new(vec![
+///    SortedColumn::new("name", "asc".to_string()),
+///    SortedColumn::new("age", "desc".to_string()),
+/// ]);
+/// 
+/// assert_eq!(sorting.columns.len(), 2);
+/// assert_eq!(sorting.sql, " ORDER BY age DESC, name ASC");
+/// ```
+/// 
 impl Sorting {
     pub fn new(columns: Vec<SortedColumn>) -> Sorting {
         let mut columns = columns;
