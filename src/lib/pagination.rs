@@ -118,7 +118,6 @@ impl Paginate {
         per_page_limit: i64,
         total_records: i64,
     ) -> Paginate {
-        let per_page = per_page;
         let per_page = if per_page > per_page_limit {
             per_page_limit
         } else {
