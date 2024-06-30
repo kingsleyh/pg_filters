@@ -1,4 +1,4 @@
-use pg_filters::pagination::Paginate;
+use pg_filters::{pagination::Paginate, PaginationOptions};
 
 #[test]
 fn test_pagination_with_negative_current_page() {
@@ -94,4 +94,13 @@ fn test_pagination_with_per_page_less_than_total_records() {
     assert_eq!(paginate.pagination.per_page, 500);
     assert_eq!(paginate.pagination.total_records, 1000);
     assert_eq!(paginate.sql, "LIMIT 500 OFFSET 0");
+}
+
+#[test]
+fn test_pagination_options() {
+    let pagination_options = PaginationOptions::new(1, 10, 10, 1000);
+    assert_eq!(pagination_options.current_page, 1);
+    assert_eq!(pagination_options.per_page, 10);
+    assert_eq!(pagination_options.per_page_limit, 10);
+    assert_eq!(pagination_options.total_records, 1000);
 }

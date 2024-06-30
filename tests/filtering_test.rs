@@ -23,6 +23,46 @@ fn test_filtering() {
 }
 
 #[test]
+fn test_filtering_with_bool() {
+    let filtering = Filtering::new(vec![
+        FilteringRule {
+            column: "name".to_string(),
+            filter_operator: FilterOperator::Equal,
+            conditional_operator: ConditionalOperator::And,
+            value: FilterValue::String("John".to_string()),
+        },
+        FilteringRule {
+            column: "completed".to_string(),
+            filter_operator: FilterOperator::Equal,
+            conditional_operator: ConditionalOperator::Or,
+            value: FilterValue::Bool(true),
+        },
+    ]);
+    assert_eq!(filtering.filters.len(), 2);
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR completed = true");
+}
+
+#[test]
+fn test_filtering_with_float() {
+    let filtering = Filtering::new(vec![
+        FilteringRule {
+            column: "name".to_string(),
+            filter_operator: FilterOperator::Equal,
+            conditional_operator: ConditionalOperator::And,
+            value: FilterValue::String("John".to_string()),
+        },
+        FilteringRule {
+            column: "value".to_string(),
+            filter_operator: FilterOperator::LessThanOrEqual,
+            conditional_operator: ConditionalOperator::Or,
+            value: FilterValue::Float(1.1),
+        },
+    ]);
+    assert_eq!(filtering.filters.len(), 2);
+    assert_eq!(filtering.sql, " WHERE name = 'John' OR value <= 1.1");
+}
+
+#[test]
 fn test_filtering_with_duplicate_columns() {
     let filtering = Filtering::new(vec![
         FilteringRule {

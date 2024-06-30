@@ -147,3 +147,24 @@ fn test_sorting_with_multiple_columns_desc_and_asc() {
     assert_eq!(sorting.columns.len(), 2);
     assert_eq!(sorting.sql, " ORDER BY age ASC, name DESC");
 }
+
+#[test]
+fn test_sorted_column_new_asc() {
+    let sorted_column = SortedColumn::new("name", "asc".to_string());
+    assert_eq!(sorted_column.column, "name");
+    assert_eq!(sorted_column.order, SortOrder::Asc);
+}
+
+#[test]
+fn test_sorted_column_new_desc() {
+    let sorted_column = SortedColumn::new("name", "desc".to_string());
+    assert_eq!(sorted_column.column, "name");
+    assert_eq!(sorted_column.order, SortOrder::Desc);
+}
+
+#[test]
+fn test_sorted_column_new_invalid_order_defaults_to_asc() {
+    let sorted_column = SortedColumn::new("name", "invalid".to_string());
+    assert_eq!(sorted_column.column, "name");
+    assert_eq!(sorted_column.order, SortOrder::Asc);
+}
