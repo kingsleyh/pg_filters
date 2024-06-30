@@ -43,3 +43,15 @@ jobs:
       - name: Run cargo test
         if: ${{ matrix.node_index == 'test' }}
         run: cargo test
+      
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.15.0'
+          args: '-- --test-threads 1'  
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v1
+        with:
+          name: code-coverage-report
+          path: coverage.xml
