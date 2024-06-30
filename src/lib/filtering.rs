@@ -8,7 +8,7 @@
 //! ```rust
 //! use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, Filtering, ConditionalOperator};
 //!     
-//! let filtering_rule = FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into());
+//! let filtering_rule = FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into());
 //!
 //! assert_eq!(filtering_rule.column, "name");
 //! assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
@@ -58,7 +58,7 @@ pub enum FilterValue {
 /// ```rust
 /// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ConditionalOperator};
 ///
-/// let filtering_rule = FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into());
+/// let filtering_rule = FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into());
 ///
 /// assert_eq!(filtering_rule.column, "name");
 /// assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
@@ -92,7 +92,7 @@ pub struct FilteringRule {
 /// ```rust
 /// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ConditionalOperator};
 ///
-/// let filtering_rule = FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into());
+/// let filtering_rule = FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into());
 ///
 /// assert_eq!(filtering_rule.column, "name");
 /// assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
@@ -102,9 +102,9 @@ pub struct FilteringRule {
 ///
 impl FilteringRule {
     pub fn new(
+        conditional_operator: String,
         column: String,
         filter_operator: String,
-        conditional_operator: String,
         value: String,
     ) -> FilteringRule {
         let filter_operator = match filter_operator.to_uppercase().as_str() {
@@ -235,8 +235,8 @@ pub enum FilterOperator {
 /// use pg_filters::filtering::{Filtering, FilteringRule};
 ///
 /// let filters = Filtering::new(vec![
-///    FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
-///   FilteringRule::new("age".into(), ">".into(), "or".into(), "18".into()),
+///    FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
+///   FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
 /// ]);
 ///
 /// assert_eq!(filters.filters.len(), 2);
@@ -262,8 +262,8 @@ pub struct Filtering {
 /// use pg_filters::filtering::{Filtering, FilteringRule};
 ///
 /// let filters = Filtering::new(vec![
-///   FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
-///  FilteringRule::new("age".into(), ">".into(), "or".into(), "18".into()),
+///   FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
+///  FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
 /// ]);
 ///
 /// assert_eq!(filters.filters.len(), 2);

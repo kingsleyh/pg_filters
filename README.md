@@ -23,8 +23,8 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
             SortedColumn::new("name".into(), "asc".into()),
         ],
         vec![
-            FilteringRule::new("name".into(), "=".into(), "and".into(), "John".into()),
-            FilteringRule::new("age".into(), ">".into(), "or".into(), "18".into()),
+            FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
+            FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
         ],
     );
 
