@@ -120,12 +120,14 @@ impl PgFilters {
         sorting_columns: Vec<SortedColumn>,
         filtering_rules: Vec<FilteringRule>,
     ) -> PgFilters {
-        let pagination = pagination.map(|pagination| Paginate::new(
+        let pagination = pagination.map(|pagination| {
+            Paginate::new(
                 pagination.current_page,
                 pagination.per_page,
                 pagination.per_page_limit,
                 pagination.total_records,
-            ));
+            )
+        });
         let sorting = Sorting::new(sorting_columns);
         let filters = Filtering::new(filtering_rules);
 
