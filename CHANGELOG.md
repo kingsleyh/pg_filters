@@ -1,3 +1,18 @@
+## 2024-06-30, Version v0.1.3
+### Commits
+- [[`4315637af3`](https://github.com/kingsleyh/pg_filters/commit/4315637af35545f83ab2af2c10c94c59dc7c9921)] bump version for release to crates.io (kingsley.hendrickse)
+- [[`079bf6bf54`](https://github.com/kingsleyh/pg_filters/commit/079bf6bf544fdd3b94f9427b572587f3859fe724)] reformat readme and add changelog (kingsley.hendrickse)
+- [[`c48123389b`](https://github.com/kingsleyh/pg_filters/commit/c48123389b6e4232c8d1acaf80581f5629a3f3d1)] readme (kingsley.hendrickse)
+
+### Stats
+```diff
+ CHANGELOG.md | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ Cargo.lock   |  2 +-
+ Cargo.toml   |  2 +-
+ README.md    | 11 ++++++++---
+ 4 files changed, 62 insertions(+), 5 deletions(-)
+```
+
 ## 2024-06-30, Version v0.1.2
 ### Commits
 - [[`1ffae66cdf`](https://github.com/kingsleyh/pg_filters/commit/1ffae66cdf10a5b18a7e76b004c3912c554a17f2)] bump version (kingsley.hendrickse)
