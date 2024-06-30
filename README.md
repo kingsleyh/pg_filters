@@ -92,8 +92,12 @@ Along with the sql it also returns objects containing the pagination, sorting an
 
 see the tests for more examples
 
+# Changelog
+
+[See the Changelog](https://github.com/kingsleyh/pg_filters/blob/main/CHANGELOG.md)
+
 # License
 
 Licensed under either of these:
-- MIT([https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT)) 
-- Apache-2.0([https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)) 
+- MIT ([https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT)) 
+- Apache-2.0 ([https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)) 
