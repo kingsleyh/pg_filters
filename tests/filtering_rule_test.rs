@@ -165,3 +165,36 @@ fn test_filtering_rule_with_invalid_conditional_operator() {
     );
     assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
 }
+
+#[test]
+fn test_filtering_rule_with_starts_with_value() {
+    let filtering_rule = FilteringRule::new(
+        "and".into(),
+        "name".into(),
+        "starts with".into(),
+        "John".into(),
+    );
+
+    assert_eq!(filtering_rule.column, "name");
+    assert_eq!(filtering_rule.filter_operator, FilterOperator::StartsWith);
+    assert_eq!(
+        filtering_rule.conditional_operator,
+        ConditionalOperator::And
+    );
+    assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
+}
+
+#[test]
+fn test_filtering_rule_with_ends_with_value() {
+    let filtering_rule = FilteringRule::new(
+        "or".into(),
+        "name".into(),
+        "ends with".into(),
+        "John".into(),
+    );
+
+    assert_eq!(filtering_rule.column, "name");
+    assert_eq!(filtering_rule.filter_operator, FilterOperator::EndsWith);
+    assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::Or);
+    assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
+}

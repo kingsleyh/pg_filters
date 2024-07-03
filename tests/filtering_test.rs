@@ -385,6 +385,30 @@ fn test_filtering_with_not_in() {
 }
 
 #[test]
+fn test_filtering_with_starts_with() {
+    let filtering = Filtering::new(vec![FilteringRule {
+        column: "name".to_string(),
+        filter_operator: FilterOperator::StartsWith,
+        conditional_operator: ConditionalOperator::And,
+        value: FilterValue::String("John".to_string()),
+    }]);
+    assert_eq!(filtering.filters.len(), 1);
+    assert_eq!(filtering.sql, " WHERE name LIKE '%John'");
+}
+
+#[test]
+fn test_filtering_with_ends_with() {
+    let filtering = Filtering::new(vec![FilteringRule {
+        column: "name".to_string(),
+        filter_operator: FilterOperator::EndsWith,
+        conditional_operator: ConditionalOperator::And,
+        value: FilterValue::String("John".to_string()),
+    }]);
+    assert_eq!(filtering.filters.len(), 1);
+    assert_eq!(filtering.sql, " WHERE name LIKE 'John%'");
+}
+
+#[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
     let filtering = Filtering::new(vec![
         FilteringRule {

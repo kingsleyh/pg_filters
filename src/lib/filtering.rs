@@ -120,6 +120,8 @@ impl FilteringRule {
             "NOT IN" => FilterOperator::NotIn,
             "IS NULL" => FilterOperator::IsNull,
             "IS NOT NULL" => FilterOperator::IsNotNull,
+            "STARTS WITH" => FilterOperator::StartsWith,
+            "ENDS WITH" => FilterOperator::EndsWith,
             _ => FilterOperator::Equal,
         };
 
@@ -195,6 +197,8 @@ pub enum ConditionalOperator {
 /// * NotIn
 /// * IsNull
 /// * IsNotNull
+/// * StartsWith
+/// * EndsWith
 ///
 /// # Examples
 ///
@@ -220,6 +224,8 @@ pub enum FilterOperator {
     NotIn,
     IsNull,
     IsNotNull,
+    StartsWith,
+    EndsWith,
 }
 
 /// The Filtering structure is used to define a set of filtering rules
@@ -331,6 +337,12 @@ impl Filtering {
                 FilterOperator::IsNotNull => {
                     sql.push_str("IS NOT NULL ");
                 }
+                FilterOperator::StartsWith => {
+                    sql.push_str("LIKE ");
+                }
+                FilterOperator::EndsWith => {
+                    sql.push_str("LIKE ");
+                }
             }
             let filter_value = match &rule.value {
                 FilterValue::String(value) => format!("'{}'", value),
@@ -351,6 +363,18 @@ impl Filtering {
                 // add the % sign both at start and end of string
                 let filter_value = filter_value.trim_matches('\'');
                 let filter_value = format!("'%{}%'", filter_value);
+
+                sql.push_str(&filter_value);
+            } else if rule.filter_operator == FilterOperator::StartsWith {
+                // add the % sign at the start of the string
+                let filter_value = filter_value.trim_matches('\'');
+                let filter_value = format!("'%{}'", filter_value);
+
+                sql.push_str(&filter_value);
+            } else if rule.filter_operator == FilterOperator::EndsWith {
+                // add the % sign at the end of the string
+                let filter_value = filter_value.trim_matches('\'');
+                let filter_value = format!("'{}%'", filter_value);
 
                 sql.push_str(&filter_value);
             } else if rule.filter_operator != FilterOperator::IsNull
