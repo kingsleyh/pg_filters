@@ -1,3 +1,23 @@
+## 2024-07-03, Version v0.1.4
+### Commits
+- [[`5d9e57db54`](https://github.com/kingsleyh/pg_filters/commit/5d9e57db5427272adeb85af646dd6f5e59f38263)] bump version to 0.1.4 for release (kingsley.hendrickse)
+- [[`e334df6ee4`](https://github.com/kingsleyh/pg_filters/commit/e334df6ee482797f7a0fadee0ce9f0ac30f8dc71)] add starts with and ends with (kingsley.hendrickse)
+- [[`64dd0a8d80`](https://github.com/kingsleyh/pg_filters/commit/64dd0a8d809a6386f5115eab4b410b2979ead093)] fix coverage (kingsley.hendrickse)
+- [[`cc9dc489ab`](https://github.com/kingsleyh/pg_filters/commit/cc9dc489abb06e5029f03fe92813d1b925813ec4)] update changelog (kingsley.hendrickse)
+
+### Stats
+```diff
+ CHANGELOG.md                 | 15 +++++++++++-
+ Cargo.lock                   |  2 +-
+ Cargo.toml                   |  2 +-
+ src/lib/filtering.rs         | 24 +++++++++++++++++-
+ tests/filtering_rule_test.rs | 33 +++++++++++++++++++++++-
+ tests/filtering_test.rs      | 64 +++++++++++++++++++++++++++++++++++++++++++++-
+ tests/pagination_test.rs     | 11 +++++++-
+ tests/sorting_test.rs        | 21 +++++++++++++++-
+ 8 files changed, 169 insertions(+), 3 deletions(-)
+```
+
 ## 2024-06-30, Version v0.1.3
 ### Commits
 - [[`4315637af3`](https://github.com/kingsleyh/pg_filters/commit/4315637af35545f83ab2af2c10c94c59dc7c9921)] bump version for release to crates.io (kingsley.hendrickse)
