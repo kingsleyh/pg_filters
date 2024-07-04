@@ -13,6 +13,54 @@ fn test_pagination_with_negative_current_page() {
 }
 
 #[test]
+fn test_pagination_with_zero_total_records() {
+    let paginate = Paginate::new(1, 10, 100, 0);
+    assert_eq!(paginate.pagination.current_page, 1);
+    assert_eq!(paginate.pagination.previous_page, 1);
+    assert_eq!(paginate.pagination.next_page, 1);
+    assert_eq!(paginate.pagination.total_pages, 0);
+    assert_eq!(paginate.pagination.per_page, 10);
+    assert_eq!(paginate.pagination.total_records, 0);
+    assert_eq!(paginate.sql, "LIMIT 10 OFFSET 0");
+}
+
+#[test]
+fn test_pagination_with_negative_total_records() {
+    let paginate = Paginate::new(1, 10, 100, -1000);
+    assert_eq!(paginate.pagination.current_page, 1);
+    assert_eq!(paginate.pagination.previous_page, 1);
+    assert_eq!(paginate.pagination.next_page, 1);
+    assert_eq!(paginate.pagination.total_pages, 0);
+    assert_eq!(paginate.pagination.per_page, 10);
+    assert_eq!(paginate.pagination.total_records, 0);
+    assert_eq!(paginate.sql, "LIMIT 10 OFFSET 0");
+}
+
+#[test]
+fn test_pagination_with_negative_per_page() {
+    let paginate = Paginate::new(1, -10, 100, 1000);
+    assert_eq!(paginate.pagination.current_page, 1);
+    assert_eq!(paginate.pagination.previous_page, 1);
+    assert_eq!(paginate.pagination.next_page, 2);
+    assert_eq!(paginate.pagination.total_pages, 100);
+    assert_eq!(paginate.pagination.per_page, 10);
+    assert_eq!(paginate.pagination.total_records, 1000);
+    assert_eq!(paginate.sql, "LIMIT 10 OFFSET 0");
+}
+
+#[test]
+fn test_pagination_with_negative_per_page_limit() {
+    let paginate = Paginate::new(1, 10, -100, 1000);
+    assert_eq!(paginate.pagination.current_page, 1);
+    assert_eq!(paginate.pagination.previous_page, 1);
+    assert_eq!(paginate.pagination.next_page, 2);
+    assert_eq!(paginate.pagination.total_pages, 100);
+    assert_eq!(paginate.pagination.per_page, 10);
+    assert_eq!(paginate.pagination.total_records, 1000);
+    assert_eq!(paginate.sql, "LIMIT 10 OFFSET 0");
+}
+
+#[test]
 fn test_pagination_with_current_page_greater_than_total_pages() {
     let paginate = Paginate::new(101, 10, 100, 1000);
     assert_eq!(paginate.pagination.current_page, 100);

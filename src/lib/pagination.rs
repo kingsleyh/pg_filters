@@ -66,10 +66,12 @@ impl Pagination {
         } else {
             1
         };
-        let next_page = if current_page < total_pages {
+        let next_page = if current_page < total_pages && total_pages > 0 {
             current_page + 1
+        } else if current_page < total_pages{
+            total_pages    
         } else {
-            total_pages
+            current_page
         };
 
         Pagination {
@@ -118,16 +120,19 @@ impl Paginate {
         per_page_limit: i64,
         total_records: i64,
     ) -> Paginate {
+        let per_page_limit = if per_page_limit > 0 { per_page_limit } else { 10 };
         let per_page = if per_page > per_page_limit {
             per_page_limit
         } else {
             per_page
         };
+        let per_page = if per_page > 0 { per_page } else { 10 };
 
-        let total_pages = (total_records as f64 / per_page as f64).ceil() as i64;
+        let total_records = if total_records > 0 { total_records } else { 0 };
 
+        let total_pages = if total_records > 0 { (total_records as f64 / per_page as f64).ceil() as i64 } else { 0 };
         let current_page = if current_page < 1 { 1 } else { current_page };
-        let current_page = if current_page > total_pages {
+        let current_page = if current_page > total_pages && total_pages > 0 {
             total_pages
         } else {
             current_page
