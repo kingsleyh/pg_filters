@@ -3,7 +3,8 @@
 //! # Examples
 //!
 //! ```rust
-//! use pg_filters::{filtering::{FilteringRule}, sorting::{SortedColumn}, PaginationOptions, PgFilters};
+//! use pg_filters::{filtering::{FilteringRule, ColumnName}, sorting::{SortedColumn}, PaginationOptions, PgFilters};
+//! use pg_filters::FilteringOptions;
 //!
 //!let filters = PgFilters::new(
 //!    Some(PaginationOptions {
@@ -16,10 +17,10 @@
 //!        SortedColumn::new("age".into(), "desc".into()),
 //!        SortedColumn::new("name".into(), "asc".into()),
 //!    ],
-//!    vec![
-//!        FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
-//!        FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
-//!    ],
+//!    Some(FilteringOptions::new(vec![
+//!        FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into()),
+//!        FilteringRule::new("or".into(), ColumnName::Int("age"), ">".into(), "18".into()),
+//!    ])),
 //!);
 //!
 //!let sql = filters.sql();
@@ -108,17 +109,48 @@ impl PaginationOptions {
     }
 }
 
+/// Struct to hold the filtering options
+/// filtering_rules is a Vec<FilteringRule>
+/// case_sensitive is a boolean to determine if the filtering rules should be case sensitive
+/// By default, case_sensitive is false
+/// If case_sensitive is true, the filtering rules will be case sensitive
+pub struct FilteringOptions {
+    pub filtering_rules: Vec<FilteringRule>,
+    pub case_sensitive: bool,
+}
+
+/// New function for FilteringOptions
+/// filtering_rules is a Vec<FilteringRule>
+/// case_sensitive is a boolean to determine if the filtering rules should be case sensitive
+/// By default, case_sensitive is false
+impl FilteringOptions {
+    pub fn new(filtering_rules: Vec<FilteringRule>) -> FilteringOptions {
+        FilteringOptions {
+            filtering_rules,
+            case_sensitive: false,
+        }
+    }
+
+    /// Function to create case sensitive filtering rules
+    pub fn case_sensitive(filtering_rules: Vec<FilteringRule>) -> FilteringOptions {
+        FilteringOptions {
+            filtering_rules,
+            case_sensitive: true,
+        }
+    }
+}
+
 /// New function for PgFilters
 /// pagination, sorting_columns and filtering_rules are optional
 /// pagination is an Option<PaginationOptions>
 /// sorting_columns is a Vec<SortedColumn>
-/// filtering_rules is a Vec<FilteringRule>
+/// filtering_rules is an Option<FilteringOptions>
 ///
 impl PgFilters {
     pub fn new(
         pagination: Option<PaginationOptions>,
         sorting_columns: Vec<SortedColumn>,
-        filtering_rules: Vec<FilteringRule>,
+        filtering_rules: Option<FilteringOptions>,
     ) -> PgFilters {
         let pagination = pagination.map(|pagination| {
             Paginate::new(
@@ -128,13 +160,17 @@ impl PgFilters {
                 pagination.total_records,
             )
         });
+
         let sorting = Sorting::new(sorting_columns);
-        let filters = Filtering::new(filtering_rules);
+
+        let filters = filtering_rules.map(|filtering_rules| {
+            Filtering::new(filtering_rules.filtering_rules, filtering_rules.case_sensitive)
+        });
 
         PgFilters {
             pagination,
             sorting: Some(sorting),
-            filters: Some(filters),
+            filters,
         }
     }
 

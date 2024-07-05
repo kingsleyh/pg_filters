@@ -6,11 +6,11 @@
 //! # Examples
 //!
 //! ```rust
-//! use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, Filtering, ConditionalOperator};
+//! use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ColumnName, Filtering, ConditionalOperator};
 //!     
-//! let filtering_rule = FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into());
+//! let filtering_rule = FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into());
 //!
-//! assert_eq!(filtering_rule.column, "name");
+//! assert_eq!(filtering_rule.column, ColumnName::String("name"));
 //! assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
 //! assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::And);
 //! assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
@@ -44,6 +44,15 @@ pub enum FilterValue {
     Bool(bool),
 }
 
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ColumnName {
+    String(&'static str),
+    Int(&'static str),
+    Float(&'static str),
+    Bool(&'static str),
+}
+
 /// The FilteringRule structure is used to define a rule for filtering data
 ///
 /// The FilteringRule structure contains the following fields:
@@ -56,11 +65,11 @@ pub enum FilterValue {
 /// # Examples
 ///
 /// ```rust
-/// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ConditionalOperator};
+/// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ColumnName, ConditionalOperator};
 ///
-/// let filtering_rule = FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into());
+/// let filtering_rule = FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into());
 ///
-/// assert_eq!(filtering_rule.column, "name");
+/// assert_eq!(filtering_rule.column, ColumnName::String("name"));
 /// assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
 /// assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::And);
 /// assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
@@ -69,7 +78,7 @@ pub enum FilterValue {
 #[derive(Debug, Clone)]
 pub struct FilteringRule {
     /// The name of the column to filter
-    pub column: String,
+    pub column: ColumnName,
     /// The operator to use for filtering
     pub filter_operator: FilterOperator,
     /// The operator to use to combine this rule with the next rule
@@ -90,11 +99,11 @@ pub struct FilteringRule {
 /// # Examples
 ///
 /// ```rust
-/// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ConditionalOperator};
+/// use pg_filters::filtering::{FilteringRule, FilterOperator, FilterValue, ColumnName, ConditionalOperator};
 ///
-/// let filtering_rule = FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into());
+/// let filtering_rule = FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into());
 ///
-/// assert_eq!(filtering_rule.column, "name");
+/// assert_eq!(filtering_rule.column, ColumnName::String("name"));
 /// assert_eq!(filtering_rule.filter_operator, FilterOperator::Equal);
 /// assert_eq!(filtering_rule.conditional_operator, ConditionalOperator::And);
 /// assert_eq!(filtering_rule.value, FilterValue::String("John".into()));
@@ -103,10 +112,11 @@ pub struct FilteringRule {
 impl FilteringRule {
     pub fn new(
         conditional_operator: String,
-        column: String,
+        column: ColumnName,
         filter_operator: String,
         value: String,
     ) -> FilteringRule {
+
         let filter_operator = match filter_operator.to_uppercase().as_str() {
             "=" => FilterOperator::Equal,
             "!=" => FilterOperator::NotEqual,
@@ -238,12 +248,12 @@ pub enum FilterOperator {
 /// # Examples
 ///
 /// ```rust
-/// use pg_filters::filtering::{Filtering, FilteringRule};
+/// use pg_filters::filtering::{Filtering, FilteringRule, ColumnName};
 ///
 /// let filters = Filtering::new(vec![
-///    FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
-///   FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
-/// ]);
+///    FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into()),
+///   FilteringRule::new("or".into(), ColumnName::Int("age"), ">".into(), "18".into()),
+/// ], true);
 ///
 /// assert_eq!(filters.filters.len(), 2);
 /// assert_eq!(filters.sql, " WHERE name = 'John' OR age > 18");
@@ -252,6 +262,7 @@ pub enum FilterOperator {
 #[derive(Debug, Clone)]
 pub struct Filtering {
     pub filters: Vec<FilteringRule>,
+    pub case_insensitive: bool,
     pub sql: String,
 }
 
@@ -265,19 +276,20 @@ pub struct Filtering {
 /// # Examples
 ///
 /// ```rust
-/// use pg_filters::filtering::{Filtering, FilteringRule};
+/// use pg_filters::filtering::{Filtering, FilteringRule, ColumnName};
+/// use pg_filters::FilteringOptions;
 ///
 /// let filters = Filtering::new(vec![
-///   FilteringRule::new("and".into(), "name".into(), "=".into(), "John".into()),
-///  FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
-/// ]);
+///   FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into()),
+///  FilteringRule::new("or".into(), ColumnName::Int("age"), ">".into(), "18".into()),
+/// ], true);
 ///
 /// assert_eq!(filters.filters.len(), 2);
 /// assert_eq!(filters.sql, " WHERE name = 'John' OR age > 18");
 /// ```
 ///
 impl Filtering {
-    pub fn new(rules: Vec<FilteringRule>) -> Filtering {
+    pub fn new(rules: Vec<FilteringRule>, case_insensitive: bool) -> Filtering {
         let mut sql = if !rules.is_empty() {
             " WHERE ".to_string()
         } else {
@@ -298,7 +310,15 @@ impl Filtering {
                     }
                 }
             }
-            sql.push_str(&rule.column);
+
+            let column_name = match rule.column {
+                ColumnName::String(value) => value,
+                ColumnName::Int(value) => value,
+                ColumnName::Float(value) => value,
+                ColumnName::Bool(value) => value,
+            };
+
+            sql.push_str(column_name);
             sql.push(' ');
             match rule.filter_operator {
                 FilterOperator::Equal => {
@@ -363,18 +383,17 @@ impl Filtering {
                 // add the % sign both at start and end of string
                 let filter_value = filter_value.trim_matches('\'');
                 let filter_value = format!("'%{}%'", filter_value);
-
                 sql.push_str(&filter_value);
             } else if rule.filter_operator == FilterOperator::StartsWith {
                 // add the % sign at the start of the string
                 let filter_value = filter_value.trim_matches('\'');
-                let filter_value = format!("'%{}'", filter_value);
+                let filter_value = format!("'{}%'", filter_value);
 
                 sql.push_str(&filter_value);
             } else if rule.filter_operator == FilterOperator::EndsWith {
                 // add the % sign at the end of the string
                 let filter_value = filter_value.trim_matches('\'');
-                let filter_value = format!("'{}%'", filter_value);
+                let filter_value = format!("'%{}'", filter_value);
 
                 sql.push_str(&filter_value);
             } else if rule.filter_operator != FilterOperator::IsNull
@@ -387,6 +406,7 @@ impl Filtering {
         Filtering {
             filters: rules,
             sql,
+            case_insensitive,
         }
     }
 }

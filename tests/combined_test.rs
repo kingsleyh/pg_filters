@@ -1,7 +1,5 @@
 use pg_filters::{
-    filtering::{ConditionalOperator, FilterOperator, FilterValue, FilteringRule},
-    sorting::{SortOrder, SortedColumn},
-    PaginationOptions, PgFilters,
+    filtering::{ColumnName, ConditionalOperator, FilterOperator, FilterValue, FilteringRule}, sorting::{SortOrder, SortedColumn}, FilteringOptions, PaginationOptions, PgFilters
 };
 
 #[test]
@@ -17,20 +15,20 @@ fn test_filtering_with_sorting_with_pagination() {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        vec![
+        Some(FilteringOptions::new(vec![
             FilteringRule {
-                column: "name".to_string(),
+                column: ColumnName::String("name"),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("John".to_string()),
             },
             FilteringRule {
-                column: "age".to_string(),
+                column: ColumnName::Int("age"),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
             },
-        ],
+        ]))
     );
 
     let sql = filters.sql();
@@ -39,6 +37,43 @@ fn test_filtering_with_sorting_with_pagination() {
         " WHERE name = 'John' OR age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0"
     );
 }
+
+#[test]
+fn test_filtering_with_case_sensitive() {
+    let filters = PgFilters::new(
+        Some(PaginationOptions {
+            current_page: 1,
+            per_page: 10,
+            per_page_limit: 10,
+            total_records: 1000,
+        }),
+        vec![SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        }],
+        Some(FilteringOptions::case_sensitive(vec![
+            FilteringRule {
+                column: ColumnName::String("name"),
+                filter_operator: FilterOperator::Equal,
+                conditional_operator: ConditionalOperator::And,
+                value: FilterValue::String("John".to_string()),
+            },
+            FilteringRule {
+                column: ColumnName::Int("age"),
+                filter_operator: FilterOperator::GreaterThan,
+                conditional_operator: ConditionalOperator::Or,
+                value: FilterValue::Int(18),
+            },
+        ]))
+    );
+
+    let sql = filters.sql();
+    assert_eq!(
+        sql,
+        " WHERE name = 'John' OR age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0"
+    );
+}
+
 
 #[test]
 fn test_filtering_without_sorting_with_pagination() {
@@ -50,20 +85,20 @@ fn test_filtering_without_sorting_with_pagination() {
             total_records: 1000,
         }),
         vec![],
-        vec![
+        Some(FilteringOptions::new(vec![
             FilteringRule {
-                column: "name".to_string(),
+                column: ColumnName::String("name"),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("John".to_string()),
             },
             FilteringRule {
-                column: "age".to_string(),
+                column: ColumnName::Int("age"),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
             },
-        ],
+        ])),
     );
 
     let sql = filters.sql();
@@ -78,20 +113,20 @@ fn test_filtering_with_sorting_without_pagination() {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        vec![
+        Some(FilteringOptions::new(vec![
             FilteringRule {
-                column: "name".to_string(),
+                column: ColumnName::String("name"),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("John".to_string()),
             },
             FilteringRule {
-                column: "age".to_string(),
+                column: ColumnName::Int("age"),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
             },
-        ],
+        ])),
     );
 
     let sql = filters.sql();
@@ -103,20 +138,20 @@ fn test_filtering_without_sorting_without_pagination() {
     let filters = PgFilters::new(
         None,
         vec![],
-        vec![
+        Some(FilteringOptions::new(vec![
             FilteringRule {
-                column: "name".to_string(),
+                column: ColumnName::String("name"),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("John".to_string()),
             },
             FilteringRule {
-                column: "age".to_string(),
+                column: ColumnName::Int("age"),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
             },
-        ],
+        ])),
     );
 
     let sql = filters.sql();
@@ -136,7 +171,7 @@ fn test_filtering_with_sorting_with_pagination_with_empty_filters() {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        vec![],
+        Some(FilteringOptions::new(vec![]))
     );
 
     let sql = filters.sql();
@@ -153,7 +188,7 @@ fn test_filtering_without_sorting_with_pagination_with_empty_filters() {
             total_records: 1000,
         }),
         vec![],
-        vec![],
+        Some(FilteringOptions::new(vec![])),
     );
 
     let sql = filters.sql();
@@ -168,7 +203,7 @@ fn test_filtering_with_sorting_without_pagination_with_empty_filters() {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        vec![],
+        Some(FilteringOptions::new(vec![])),
     );
 
     let sql = filters.sql();
@@ -177,7 +212,7 @@ fn test_filtering_with_sorting_without_pagination_with_empty_filters() {
 
 #[test]
 fn test_filtering_without_sorting_without_pagination_with_empty_filters() {
-    let filters = PgFilters::new(None, vec![], vec![]);
+    let filters = PgFilters::new(None, vec![], Some(FilteringOptions::new(vec![])));
 
     let sql = filters.sql();
     assert_eq!(sql, "");
@@ -193,20 +228,20 @@ fn test_filtering_with_sorting_with_pagination_with_empty_sorting() {
             total_records: 1000,
         }),
         vec![],
-        vec![
+        Some(FilteringOptions::new(vec![
             FilteringRule {
-                column: "name".to_string(),
+                column: ColumnName::String("name"),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("John".to_string()),
             },
             FilteringRule {
-                column: "age".to_string(),
+                column: ColumnName::Int("age"),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
             },
-        ],
+        ])),
     );
 
     let sql = filters.sql();
@@ -232,26 +267,26 @@ fn test_with_many_filters_and_many_sorting_and_pagination() {
                 order: SortOrder::Desc,
             },
         ],
-        vec![
+        Some(FilteringOptions::new(vec![
             FilteringRule {
-                column: "name".to_string(),
+                column: ColumnName::String("name"),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("John".to_string()),
             },
             FilteringRule {
-                column: "age".to_string(),
+                column: ColumnName::Int("age"),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
                 value: FilterValue::Int(18),
             },
             FilteringRule {
-                column: "email".to_string(),
+                column: ColumnName::String("email"),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::And,
                 value: FilterValue::String("gmail.com".to_string()),
             },
-        ],
+        ])),
     );
 
     let sql = filters.sql();
