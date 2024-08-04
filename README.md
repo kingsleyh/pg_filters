@@ -94,6 +94,10 @@ Along with the sql it also returns objects containing the pagination, sorting an
 
 see the tests for more examples
 
+# TODO
+* Dates / Timestamps
+* [other Types as listed here](https://docs.rs/tokio-postgres/latest/tokio_postgres/types/trait.ToSql.html)
+
 # Changelog
 
 [See the Changelog](https://github.com/kingsleyh/pg_filters/blob/main/CHANGELOG.md)
