@@ -1092,7 +1092,7 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "pg_filters"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "eyre",
  "testcontainers-modules",

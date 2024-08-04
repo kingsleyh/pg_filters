@@ -1,3 +1,46 @@
+## 2024-08-04, Version v0.1.5
+### Commits
+- [[`bdbe472276`](https://github.com/kingsleyh/pg_filters/commit/bdbe472276e0e814bd2a58f7e06b6307c343e8c8)] prepare release v0.1.5 (kingsley.hendrickse)
+- [[`7ef861a5f3`](https://github.com/kingsleyh/pg_filters/commit/7ef861a5f34b012261f42269c0f60868e70c216d)] fix (kingsley.hendrickse)
+- [[`52eff6ea2a`](https://github.com/kingsleyh/pg_filters/commit/52eff6ea2ac1cd1c27e1cb7def1a3436150ae13d)] fix (kingsley.hendrickse)
+- [[`e131beaeab`](https://github.com/kingsleyh/pg_filters/commit/e131beaeab556147be1b0ca9d7e6434053d6f450)] readme (kingsley.hendrickse)
+- [[`ae08a420e1`](https://github.com/kingsleyh/pg_filters/commit/ae08a420e14906c4e906143e932ca7c444121d55)] specs (kingsley.hendrickse)
+- [[`49eaa6c1a3`](https://github.com/kingsleyh/pg_filters/commit/49eaa6c1a337f2880c1719893de4a99ffc016a3f)] specs (kingsley.hendrickse)
+- [[`ea89dd57c0`](https://github.com/kingsleyh/pg_filters/commit/ea89dd57c08226940be21805ae10e274248a8067)] refactor (kingsley.hendrickse)
+- [[`ec7b9372e3`](https://github.com/kingsleyh/pg_filters/commit/ec7b9372e3dcf2080c05dfa4d65946cda78deddd)] fix (kingsley.hendrickse)
+- [[`9d9b5a9167`](https://github.com/kingsleyh/pg_filters/commit/9d9b5a916776d473bd7b01a393864d196113a5c4)] refactor to pass a ColumnName to the FilteringRule so we can handle the sql generation better with types (kingsley.hendrickse)
+- [[`a551b83930`](https://github.com/kingsleyh/pg_filters/commit/a551b83930a8e2d3bf2278694e2a6d66e053ff07)] fix bug when 0 total_records created a negative offset (kingsley.hendrickse)
+- [[`df2010fc83`](https://github.com/kingsleyh/pg_filters/commit/df2010fc8389712a7db73ac295de8412ab406435)] readme (kingsley.hendrickse)
+- [[`dc906a984a`](https://github.com/kingsleyh/pg_filters/commit/dc906a984a3d349272ec391ac59a4603b9182388)] update changelog (kingsley.hendrickse)
+
+### Stats
+```diff
+ .gitignore                            |    1 +-
+ CHANGELOG.md                          |   20 +-
+ Cargo.lock                            | 2260 ++++++++++++++++++++++++++++++++++-
+ Cargo.toml                            |    8 +-
+ README.md                             |   12 +-
+ src/lib/filtering.rs                  |  756 +++++++----
+ src/lib/mod.rs                        |   63 +-
+ src/lib/pagination.rs                 |   21 +-
+ src/lib/sorting.rs                    |   16 +-
+ tests/combined_test.rs                |  262 +----
+ tests/filtering_rule_test.rs          |  200 +---
+ tests/filtering_test.rs               |  567 +---------
+ tests/integration/integration_test.rs |  190 +++-
+ tests/integration/mod.rs              |   84 +-
+ tests/mod.rs                          |    2 +-
+ tests/pagination_test.rs              |  106 +--
+ tests/sorting_test.rs                 |  170 +---
+ tests/unit/combined_test.rs           |  293 ++++-
+ tests/unit/filtering_rule_test.rs     |  403 ++++++-
+ tests/unit/filtering_test.rs          |  708 +++++++++++-
+ tests/unit/mod.rs                     |    5 +-
+ tests/unit/pagination_test.rs         |  154 ++-
+ tests/unit/sorting_test.rs            |  170 +++-
+ 23 files changed, 4863 insertions(+), 1608 deletions(-)
+```
+
 ## 2024-07-03, Version v0.1.4
 ### Commits
 - [[`5d9e57db54`](https://github.com/kingsleyh/pg_filters/commit/5d9e57db5427272adeb85af646dd6f5e59f38263)] bump version to 0.1.4 for release (kingsley.hendrickse)
