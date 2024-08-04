@@ -48,6 +48,8 @@
 //! * "NOT IN"
 //! * "IS NULL"
 //! * "IS NOT NULL"
+//! * "STARTS WITH"
+//! * "ENDS WITH"
 //!
 //!
 //! ### Valid Conditional Filter Values
