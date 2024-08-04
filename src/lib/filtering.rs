@@ -48,6 +48,21 @@ impl Display for FilterColumn {
     }
 }
 
+impl Display for FilterValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            FilterValue::String(v) => write!(f, "{}", v),
+            FilterValue::Int(v) => write!(f, "{}", v),
+            FilterValue::Float(v) => write!(f, "{}", v),
+            FilterValue::Bool(v) => write!(f, "{}", v),
+            FilterValue::StringList(v) => write!(f, "{:?}", v),
+            FilterValue::IntList(v) => write!(f, "{:?}", v),
+            FilterValue::FloatList(v) => write!(f, "{:?}", v),
+            FilterValue::BoolList(v) => write!(f, "{:?}", v),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FilteringRule {
     /// The name of the column to filter and the value to filter by
@@ -198,7 +213,7 @@ impl Filtering {
                         let v = v.iter().map(|v| format!("'{}'", v)).collect::<Vec<String>>();
                         Ok(FilterColumn::StringList(c, v))
                     }
-                    _ => Err(eyre::eyre!("Invalid value for column type String")),
+                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type String", value.to_string(), c)),
                 }
             }
             ColumnName::Int(c) => {
@@ -208,7 +223,7 @@ impl Filtering {
                 match value {
                     FilterValue::Int(v) => Ok(FilterColumn::Int(c, v)),
                     FilterValue::IntList(v) => Ok(FilterColumn::IntList(c, v)),
-                    _ => Err(eyre::eyre!("Invalid value for column type Int")),
+                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type Int", value.to_string(), c)),
                 }
             }
             ColumnName::Float(c) => {
@@ -218,7 +233,7 @@ impl Filtering {
                 match value {
                     FilterValue::Float(v) => Ok(FilterColumn::Float(c, v)),
                     FilterValue::FloatList(v) => Ok(FilterColumn::FloatList(c, v)),
-                    _ => Err(eyre::eyre!("Invalid value for column type Float")),
+                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type Float", value.to_string(), c)),
                 }
             }
             ColumnName::Bool(c) => {
@@ -228,7 +243,7 @@ impl Filtering {
                 match value {
                     FilterValue::Bool(v) => Ok(FilterColumn::Bool(c, v)),
                     FilterValue::BoolList(v) => Ok(FilterColumn::BoolList(c, v)),
-                    _ => Err(eyre::eyre!("Invalid value for column type Bool")),
+                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type Bool", value.to_string(), c)),
                 }
             }
         }

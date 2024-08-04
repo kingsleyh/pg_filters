@@ -7,18 +7,12 @@ use tokio_postgres::{Client, NoTls};
 
 pub mod integration_test;
 
-pub async fn client() -> Client {
-    get_client(get_connection_string().await).await
-}
-
-async fn get_connection_string() -> String {
+async fn get_client() -> Client {
     let container = get_container().await.as_ref().unwrap();
     let port = container.get_host_port_ipv4(5432).await.unwrap();
     let host = container.get_host().await.unwrap();
-    format!("host={} user=postgres password=postgres port={}", host, port)
-}
+    let connection_string = format!("host={} user=postgres password=postgres port={}", host, port);
 
-async fn get_client(connection_string: String) -> Client {
     let (client, connection) =
         tokio_postgres::connect(connection_string.as_str(), NoTls).await.unwrap();
 
@@ -34,3 +28,53 @@ pub async fn get_container() -> &'static error::Result<ContainerAsync<Postgres>>
     static ONCE: OnceCell<error::Result<ContainerAsync<Postgres>>> = OnceCell::const_new();
     ONCE.get_or_init(|| async { Postgres::default().start().await }).await
 }
+
+pub async fn setup_data() -> &'static bool {
+    static ONCE: OnceCell<bool> = OnceCell::const_new();
+    ONCE.get_or_init(|| async { _setup_data().await }).await
+}
+
+async fn _setup_data() -> bool {
+    println!("Setting up data");
+    create_table().await;
+    create_rows().await;
+    true
+}
+
+async fn create_table() {
+    let client = get_client().await;
+    client
+        .execute(
+            "CREATE TABLE person (
+                id        SERIAL           PRIMARY KEY,
+                name      TEXT             NOT NULL,
+                nickname  VARCHAR(200)     NOT NULL,
+                age       INTEGER          NOT NULL,
+                capacity  DOUBLE PRECISION NOT NULL,
+                active    BOOLEAN          NOT NULL
+            )",
+            &[],
+        )
+        .await
+        .unwrap();
+}
+
+async fn create_rows() {
+    let client = get_client().await;
+    for i in 0..20 {
+        client
+            .execute(
+                "INSERT INTO person (name, nickname, age, capacity, active) VALUES ($1, $2, $3, $4, $5)",
+                &[
+                    &format!("name{}", i),
+                    &format!("nickname{}", i),
+                    &i,
+                    &(i as f64),
+                    &(i % 2 == 0),
+                ],
+            )
+            .await
+            .unwrap();
+    }
+}
+
