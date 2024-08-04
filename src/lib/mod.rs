@@ -24,7 +24,7 @@
 //!);
 //!
 //!let sql = filters.sql();
-//!assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
+//!assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 //! ```
 //!
 //! # Notes
@@ -111,31 +111,31 @@ impl PaginationOptions {
 
 /// Struct to hold the filtering options
 /// filtering_rules is a Vec<FilteringRule>
-/// case_sensitive is a boolean to determine if the filtering rules should be case sensitive
-/// By default, case_sensitive is false
-/// If case_sensitive is true, the filtering rules will be case sensitive
+/// case_insensitive is a boolean to determine if the filtering rules should be case-insensitive
+/// By default, case_insensitive is true
+/// If case_insensitive is true, the filtering rules will be case-insensitive
 pub struct FilteringOptions {
-    pub filtering_rules: Vec<FilteringRule>,
-    pub case_sensitive: bool,
+    pub filtering_rules: Vec<eyre::Result<FilteringRule>>,
+    pub case_insensitive: bool,
 }
 
 /// New function for FilteringOptions
 /// filtering_rules is a Vec<FilteringRule>
-/// case_sensitive is a boolean to determine if the filtering rules should be case sensitive
-/// By default, case_sensitive is false
+/// case_insensitive is a boolean to determine if the filtering rules should be case-insensitive
+/// By default, case_insensitive is true
 impl FilteringOptions {
-    pub fn new(filtering_rules: Vec<FilteringRule>) -> FilteringOptions {
+    pub fn new(filtering_rules: Vec<eyre::Result<FilteringRule>>) -> FilteringOptions {
         FilteringOptions {
             filtering_rules,
-            case_sensitive: false,
+            case_insensitive: true,
         }
     }
 
-    /// Function to create case sensitive filtering rules
-    pub fn case_sensitive(filtering_rules: Vec<FilteringRule>) -> FilteringOptions {
+    /// Function to create case-sensitive filtering rules
+    pub fn case_sensitive(filtering_rules: Vec<eyre::Result<FilteringRule>>) -> FilteringOptions {
         FilteringOptions {
             filtering_rules,
-            case_sensitive: true,
+            case_insensitive: false,
         }
     }
 }
@@ -164,7 +164,7 @@ impl PgFilters {
         let sorting = Sorting::new(sorting_columns);
 
         let filters = filtering_rules.map(|filtering_rules| {
-            Filtering::new(filtering_rules.filtering_rules, filtering_rules.case_sensitive)
+            Filtering::new(filtering_rules.filtering_rules, filtering_rules.case_insensitive)
         });
 
         PgFilters {
