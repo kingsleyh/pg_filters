@@ -19,17 +19,17 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
             total_records: 1000,
         }),
         vec![
-            SortedColumn::new("age".into(), "desc".into()),
-            SortedColumn::new("name".into(), "asc".into()),
+            SortedColumn::new("age", "desc"),
+            SortedColumn::new("name", "asc"),
         ],
         vec![
-            FilteringRule::new("where".into(), "name".into(), "=".into(), "John".into()),
-            FilteringRule::new("or".into(), "age".into(), ">".into(), "18".into()),
+            FilteringRule::new("where", "name", "=", "John"),
+            FilteringRule::new("or", "age", ">", "18"),
         ],
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE name = 'John' OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
+    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 ```
 
 ## Note
