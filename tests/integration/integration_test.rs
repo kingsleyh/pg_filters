@@ -1,6 +1,10 @@
 use crate::integration::{get_client, setup_data};
-use pg_filters::{filtering::{FilteringRule, ColumnName}, sorting::{SortedColumn}, PaginationOptions, PgFilters};
 use pg_filters::FilteringOptions;
+use pg_filters::{
+    filtering::{ColumnName, FilteringRule},
+    sorting::SortedColumn,
+    PaginationOptions, PgFilters,
+};
 
 #[tokio::test]
 async fn test_string_int() {
@@ -28,11 +32,14 @@ async fn test_string_int() {
     let query = format!("SELECT * FROM person {}", sql);
     let rows = client.query(query.as_str(), &[]).await.unwrap();
 
-    let rows: Vec<(String, i32)> = rows.iter().map(|row| {
-        let name: String = row.get("name");
-        let age: i32 = row.get("age");
-        (name, age)
-    }).collect();
+    let rows: Vec<(String, i32)> = rows
+        .iter()
+        .map(|row| {
+            let name: String = row.get("name");
+            let age: i32 = row.get("age");
+            (name, age)
+        })
+        .collect();
 
     let expected_rows = vec![
         ("name19".to_string(), 19),
@@ -76,20 +83,20 @@ async fn test_float_bool() {
     let query = format!("SELECT * FROM person {}", sql);
     let rows = client.query(query.as_str(), &[]).await.unwrap();
 
-    let rows: Vec<(String, f64, bool)> = rows.iter().map(|row| {
-        let name: String = row.get("name");
-        let capacity: f64 = row.get("capacity");
-        let active: bool = row.get("active");
-        (name, capacity, active)
-    }).collect();
+    let rows: Vec<(String, f64, bool)> = rows
+        .iter()
+        .map(|row| {
+            let name: String = row.get("name");
+            let capacity: f64 = row.get("capacity");
+            let active: bool = row.get("active");
+            (name, capacity, active)
+        })
+        .collect();
 
-    let expected_rows = vec![
-        ("name4".to_string(), 4.0, true),
-    ];
+    let expected_rows = vec![("name4".to_string(), 4.0, true)];
 
     assert_eq!(rows, expected_rows);
 }
-
 
 #[tokio::test]
 async fn test_in() {
@@ -107,20 +114,26 @@ async fn test_in() {
             SortedColumn::new("age", "desc"),
             SortedColumn::new("name", "asc"),
         ],
-        Some(FilteringOptions::new(vec![
-            FilteringRule::new("where", ColumnName::Int("age"), "in", "11,12,13"),
-        ])),
+        Some(FilteringOptions::new(vec![FilteringRule::new(
+            "where",
+            ColumnName::Int("age"),
+            "in",
+            "11,12,13",
+        )])),
     );
 
     let sql = filters.sql();
     let query = format!("SELECT * FROM person {}", sql);
     let rows = client.query(query.as_str(), &[]).await.unwrap();
 
-    let rows: Vec<(String, i32)> = rows.iter().map(|row| {
-        let name: String = row.get("name");
-        let age: i32 = row.get("age");
-        (name, age)
-    }).collect();
+    let rows: Vec<(String, i32)> = rows
+        .iter()
+        .map(|row| {
+            let name: String = row.get("name");
+            let age: i32 = row.get("age");
+            (name, age)
+        })
+        .collect();
 
     let expected_rows = vec![
         ("name13".to_string(), 13),
@@ -130,7 +143,6 @@ async fn test_in() {
 
     assert_eq!(rows, expected_rows);
 }
-
 
 #[tokio::test]
 async fn test_starts_with() {
@@ -159,11 +171,14 @@ async fn test_starts_with() {
     let query = format!("SELECT * FROM person {}", sql);
     let rows = client.query(query.as_str(), &[]).await.unwrap();
 
-    let rows: Vec<(String, i32)> = rows.iter().map(|row| {
-        let name: String = row.get("name");
-        let age: i32 = row.get("age");
-        (name, age)
-    }).collect();
+    let rows: Vec<(String, i32)> = rows
+        .iter()
+        .map(|row| {
+            let name: String = row.get("name");
+            let age: i32 = row.get("age");
+            (name, age)
+        })
+        .collect();
 
     let expected_rows = vec![
         ("name19".to_string(), 19),

@@ -1,7 +1,9 @@
-use pg_filters::{
-    filtering::{ConditionalOperator, FilteringRule, FilterOperator}, FilteringOptions, PaginationOptions, PgFilters, sorting::{SortedColumn, SortOrder}
-};
 use pg_filters::filtering::FilterColumn;
+use pg_filters::{
+    filtering::{ConditionalOperator, FilterOperator, FilteringRule},
+    sorting::{SortOrder, SortedColumn},
+    FilteringOptions, PaginationOptions, PgFilters,
+};
 
 #[test]
 fn test_filtering_with_sorting_with_pagination() {
@@ -27,7 +29,7 @@ fn test_filtering_with_sorting_with_pagination() {
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
             }),
-        ]))
+        ])),
     );
 
     let sql = filters.sql();
@@ -61,7 +63,7 @@ fn test_filtering_with_case_sensitive() {
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
             }),
-        ]))
+        ])),
     );
 
     let sql = filters.sql();
@@ -70,7 +72,6 @@ fn test_filtering_with_case_sensitive() {
         " WHERE name = 'John' OR age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0"
     );
 }
-
 
 #[test]
 fn test_filtering_without_sorting_with_pagination() {
@@ -97,7 +98,10 @@ fn test_filtering_without_sorting_with_pagination() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 LIMIT 10 OFFSET 0");
+    assert_eq!(
+        sql,
+        " WHERE LOWER(name) = LOWER('John') OR age > 18 LIMIT 10 OFFSET 0"
+    );
 }
 
 #[test]
@@ -123,7 +127,10 @@ fn test_filtering_with_sorting_without_pagination() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 ORDER BY name ASC");
+    assert_eq!(
+        sql,
+        " WHERE LOWER(name) = LOWER('John') OR age > 18 ORDER BY name ASC"
+    );
 }
 
 #[test]
@@ -162,7 +169,7 @@ fn test_filtering_with_sorting_with_pagination_with_empty_filters() {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![]))
+        Some(FilteringOptions::new(vec![])),
     );
 
     let sql = filters.sql();
@@ -234,7 +241,10 @@ fn test_filtering_with_sorting_with_pagination_with_empty_sorting() {
     );
 
     let sql = filters.sql();
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 LIMIT 10 OFFSET 0");
+    assert_eq!(
+        sql,
+        " WHERE LOWER(name) = LOWER('John') OR age > 18 LIMIT 10 OFFSET 0"
+    );
 }
 
 #[test]

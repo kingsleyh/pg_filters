@@ -116,17 +116,31 @@ impl FilteringRule {
 
         let value = match filter_operator {
             FilterOperator::In | FilterOperator::NotIn => {
-                let values = value.split(',').map(|v| v.trim().to_string()).collect::<Vec<String>>();
-                let first = values.first().ok_or(eyre::eyre!("No values found for IN/NOT IN filter"))?;
+                let values = value
+                    .split(',')
+                    .map(|v| v.trim().to_string())
+                    .collect::<Vec<String>>();
+                let first = values
+                    .first()
+                    .ok_or(eyre::eyre!("No values found for IN/NOT IN filter"))?;
 
                 if first.parse::<i64>().is_ok() {
-                    let values = values.iter().map(|v| v.parse::<i64>()).collect::<Result<Vec<i64>, _>>()?;
+                    let values = values
+                        .iter()
+                        .map(|v| v.parse::<i64>())
+                        .collect::<Result<Vec<i64>, _>>()?;
                     FilterValue::IntList(values)
                 } else if first.parse::<f64>().is_ok() {
-                    let values = values.iter().map(|v| v.parse::<f64>()).collect::<Result<Vec<f64>, _>>()?;
+                    let values = values
+                        .iter()
+                        .map(|v| v.parse::<f64>())
+                        .collect::<Result<Vec<f64>, _>>()?;
                     FilterValue::FloatList(values)
                 } else if first.to_lowercase() == "true" || first.to_lowercase() == "false" {
-                    let values = values.iter().map(|v| v.parse::<bool>()).collect::<Result<Vec<bool>, _>>()?;
+                    let values = values
+                        .iter()
+                        .map(|v| v.parse::<bool>())
+                        .collect::<Result<Vec<bool>, _>>()?;
                     FilterValue::BoolList(values)
                 } else {
                     FilterValue::StringList(values)
@@ -148,7 +162,8 @@ impl FilteringRule {
             }
         };
 
-        let filter_column = Filtering::filter_column(column.clone(), filter_operator.clone(), value.clone())?;
+        let filter_column =
+            Filtering::filter_column(column.clone(), filter_operator.clone(), value.clone())?;
 
         Ok(FilteringRule {
             filter_column,
@@ -190,7 +205,11 @@ pub struct Filtering {
 }
 
 impl Filtering {
-    fn filter_column(column: ColumnName, operator: FilterOperator, value: FilterValue) -> eyre::Result<FilterColumn> {
+    fn filter_column(
+        column: ColumnName,
+        operator: FilterOperator,
+        value: FilterValue,
+    ) -> eyre::Result<FilterColumn> {
         match column {
             ColumnName::String(c) => {
                 if let Some(value) = Self::handle_null(operator.clone(), c) {
@@ -201,19 +220,29 @@ impl Filtering {
                         if let Some(value) = Self::handle_like(operator.clone(), c, v.clone()) {
                             return value;
                         }
-                        if let Some(value) = Self::handle_starts_with(operator.clone(), c, v.clone()) {
+                        if let Some(value) =
+                            Self::handle_starts_with(operator.clone(), c, v.clone())
+                        {
                             return value;
                         }
-                        if let Some(value) = Self::handle_ends_with(operator.clone(), c, v.clone()) {
+                        if let Some(value) = Self::handle_ends_with(operator.clone(), c, v.clone())
+                        {
                             return value;
                         }
                         Ok(FilterColumn::String(c, format!("'{}'", v)))
                     }
                     FilterValue::StringList(v) => {
-                        let v = v.iter().map(|v| format!("'{}'", v)).collect::<Vec<String>>();
+                        let v = v
+                            .iter()
+                            .map(|v| format!("'{}'", v))
+                            .collect::<Vec<String>>();
                         Ok(FilterColumn::StringList(c, v))
                     }
-                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type String", value.to_string(), c)),
+                    _ => Err(eyre::eyre!(
+                        "Invalid value: '{}' for column: '{}' of type String",
+                        value.to_string(),
+                        c
+                    )),
                 }
             }
             ColumnName::Int(c) => {
@@ -223,7 +252,11 @@ impl Filtering {
                 match value {
                     FilterValue::Int(v) => Ok(FilterColumn::Int(c, v)),
                     FilterValue::IntList(v) => Ok(FilterColumn::IntList(c, v)),
-                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type Int", value.to_string(), c)),
+                    _ => Err(eyre::eyre!(
+                        "Invalid value: '{}' for column: '{}' of type Int",
+                        value.to_string(),
+                        c
+                    )),
                 }
             }
             ColumnName::Float(c) => {
@@ -233,7 +266,11 @@ impl Filtering {
                 match value {
                     FilterValue::Float(v) => Ok(FilterColumn::Float(c, v)),
                     FilterValue::FloatList(v) => Ok(FilterColumn::FloatList(c, v)),
-                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type Float", value.to_string(), c)),
+                    _ => Err(eyre::eyre!(
+                        "Invalid value: '{}' for column: '{}' of type Float",
+                        value.to_string(),
+                        c
+                    )),
                 }
             }
             ColumnName::Bool(c) => {
@@ -243,34 +280,53 @@ impl Filtering {
                 match value {
                     FilterValue::Bool(v) => Ok(FilterColumn::Bool(c, v)),
                     FilterValue::BoolList(v) => Ok(FilterColumn::BoolList(c, v)),
-                    _ => Err(eyre::eyre!("Invalid value: '{}' for column: '{}' of type Bool", value.to_string(), c)),
+                    _ => Err(eyre::eyre!(
+                        "Invalid value: '{}' for column: '{}' of type Bool",
+                        value.to_string(),
+                        c
+                    )),
                 }
             }
         }
     }
 
-    fn handle_null(operator: FilterOperator, c: &'static str) -> Option<eyre::Result<FilterColumn>> {
+    fn handle_null(
+        operator: FilterOperator,
+        c: &'static str,
+    ) -> Option<eyre::Result<FilterColumn>> {
         if operator == FilterOperator::IsNull || operator == FilterOperator::IsNotNull {
             return Some(Ok(FilterColumn::String(c, "".to_string())));
         };
         None
     }
 
-    fn handle_like(operator: FilterOperator, c: &'static str, v: String) -> Option<eyre::Result<FilterColumn>> {
+    fn handle_like(
+        operator: FilterOperator,
+        c: &'static str,
+        v: String,
+    ) -> Option<eyre::Result<FilterColumn>> {
         if operator == FilterOperator::Like || operator == FilterOperator::NotLike {
             return Some(Ok(FilterColumn::String(c, format!("'%{}%'", v))));
         };
         None
     }
 
-    fn handle_starts_with(operator: FilterOperator, c: &'static str, v: String) -> Option<eyre::Result<FilterColumn>> {
+    fn handle_starts_with(
+        operator: FilterOperator,
+        c: &'static str,
+        v: String,
+    ) -> Option<eyre::Result<FilterColumn>> {
         if operator == FilterOperator::StartsWith {
             return Some(Ok(FilterColumn::String(c, format!("'{}%'", v))));
         };
         None
     }
 
-    fn handle_ends_with(operator: FilterOperator, c: &'static str, v: String) -> Option<eyre::Result<FilterColumn>> {
+    fn handle_ends_with(
+        operator: FilterOperator,
+        c: &'static str,
+        v: String,
+    ) -> Option<eyre::Result<FilterColumn>> {
         if operator == FilterOperator::EndsWith {
             return Some(Ok(FilterColumn::String(c, format!("'%{}'", v))));
         };
@@ -289,138 +345,206 @@ impl Filtering {
         }
     }
 
-    fn sql_str_in(case_insensitive: bool, column: &str, operator: &str, value: Vec<String>) -> String {
+    fn sql_str_in(
+        case_insensitive: bool,
+        column: &str,
+        operator: &str,
+        value: Vec<String>,
+    ) -> String {
         if case_insensitive {
-            format!("LOWER({}) {} ({})", column, operator, value.into_iter().map(|v| format!("LOWER('{}')", v)).collect::<Vec<String>>().join(", "))
+            format!(
+                "LOWER({}) {} ({})",
+                column,
+                operator,
+                value
+                    .into_iter()
+                    .map(|v| format!("LOWER('{}')", v))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            )
         } else {
-            format!("{} {} ({})", column, operator, value.into_iter().map(|v| format!("'{}'", v)).collect::<Vec<String>>().join(", "))
+            format!(
+                "{} {} ({})",
+                column,
+                operator,
+                value
+                    .into_iter()
+                    .map(|v| format!("'{}'", v))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            )
         }
     }
 
     fn sql_str_in_int(column: &str, operator: &str, value: Vec<i64>) -> String {
-        format!("{} {} ({})", column, operator, value.into_iter().map(|v| v.to_string()).collect::<Vec<String>>().join(", "))
+        format!(
+            "{} {} ({})",
+            column,
+            operator,
+            value
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+        )
     }
 
     fn sql_str_in_float(column: &str, operator: &str, value: Vec<f64>) -> String {
-        format!("{} {} ({})", column, operator, value.into_iter().map(|v| v.to_string()).collect::<Vec<String>>().join(", "))
+        format!(
+            "{} {} ({})",
+            column,
+            operator,
+            value
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+        )
     }
 
     fn sql_str_in_bool(column: &str, operator: &str, value: Vec<bool>) -> String {
-        format!("{} {} ({})", column, operator, value.into_iter().map(|v| v.to_string()).collect::<Vec<String>>().join(", "))
+        format!(
+            "{} {} ({})",
+            column,
+            operator,
+            value
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+        )
     }
 
     fn sql_str_null(column: &str, operator: &str) -> String {
         format!("{} {}", column, operator)
     }
 
-    fn operators(cs: bool, filter_operator: FilterOperator, filter_column: FilterColumn) -> eyre::Result<String> {
+    fn operators(
+        cs: bool,
+        filter_operator: FilterOperator,
+        filter_column: FilterColumn,
+    ) -> eyre::Result<String> {
         match filter_operator {
-            FilterOperator::Equal => {
-                match filter_column {
-                    FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "=", v)),
-                    FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "=", v.to_string())),
-                    FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "=", v.to_string())),
-                    FilterColumn::Bool(c, v) => Ok(Filtering::sql_str(c, "=", v.to_string())),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator Equal", filter_column.to_string())),
-                }
-            }
-            FilterOperator::NotEqual => {
-                match filter_column {
-                    FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "!=", v)),
-                    FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "!=", v.to_string())),
-                    FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "!=", v.to_string())),
-                    FilterColumn::Bool(c, v) => Ok(Filtering::sql_str(c, "!=", v.to_string())),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator NotEqual", filter_column.to_string())),
-                }
-            }
-            FilterOperator::GreaterThan => {
-                match filter_column {
-                    FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
-                    FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator GreaterThan", filter_column.to_string())),
-                }
-            }
-            FilterOperator::GreaterThanOrEqual => {
-                match filter_column {
-                    FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
-                    FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator GreaterThanOrEqual", filter_column.to_string())),
-                }
-            }
-            FilterOperator::LessThan => {
-                match filter_column {
-                    FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
-                    FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator LessThan", filter_column.to_string())),
-                }
-            }
-            FilterOperator::LessThanOrEqual => {
-                match filter_column {
-                    FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
-                    FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator LessThanOrEqual", filter_column.to_string())),
-                }
-            }
-            FilterOperator::Like => {
-                match filter_column {
-                    FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator Like", filter_column.to_string())),
-                }
-            }
-            FilterOperator::NotLike => {
-                match filter_column {
-                    FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", v)),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator NotLike", filter_column.to_string())),
-                }
-            }
-            FilterOperator::In => {
-                match filter_column {
-                    FilterColumn::StringList(c, v) => Ok(Filtering::sql_str_in(cs, c, "IN", v)),
-                    FilterColumn::IntList(c, v) => Ok(Filtering::sql_str_in_int(c, "IN", v)),
-                    FilterColumn::FloatList(c, v) => Ok(Filtering::sql_str_in_float(c, "IN", v)),
-                    FilterColumn::BoolList(c, v) => Ok(Filtering::sql_str_in_bool(c, "IN", v)),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator In", filter_column.to_string()))
-                }
-            }
-            FilterOperator::NotIn => {
-                match filter_column {
-                    FilterColumn::StringList(c, v) => Ok(Filtering::sql_str_in(cs, c, "NOT IN", v)),
-                    FilterColumn::IntList(c, v) => Ok(Filtering::sql_str_in_int(c, "NOT IN", v)),
-                    FilterColumn::FloatList(c, v) => Ok(Filtering::sql_str_in_float(c, "NOT IN", v)),
-                    FilterColumn::BoolList(c, v) => Ok(Filtering::sql_str_in_bool(c, "NOT IN", v)),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator NotIn", filter_column.to_string()))
-                }
-            }
-            FilterOperator::IsNull => {
-                match filter_column {
-                    FilterColumn::String(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
-                    FilterColumn::Int(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
-                    FilterColumn::Float(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
-                    FilterColumn::Bool(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator IsNull", filter_column.to_string())),
-                }
-            }
-            FilterOperator::IsNotNull => {
-                match filter_column {
-                    FilterColumn::String(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
-                    FilterColumn::Int(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
-                    FilterColumn::Float(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
-                    FilterColumn::Bool(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator IsNotNull", filter_column.to_string())),
-                }
-            }
-            FilterOperator::StartsWith => {
-                match filter_column {
-                    FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator Like", filter_column.to_string())),
-                }
-            }
-            FilterOperator::EndsWith => {
-                match filter_column {
-                    FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
-                    _ => Err(eyre::eyre!("Invalid column type '{}' for filter operator Like", filter_column.to_string())),
-                }
-            }
+            FilterOperator::Equal => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "=", v)),
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "=", v.to_string())),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "=", v.to_string())),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str(c, "=", v.to_string())),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator Equal",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::NotEqual => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "!=", v)),
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "!=", v.to_string())),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "!=", v.to_string())),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str(c, "!=", v.to_string())),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator NotEqual",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::GreaterThan => match filter_column {
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator GreaterThan",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::GreaterThanOrEqual => match filter_column {
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator GreaterThanOrEqual",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::LessThan => match filter_column {
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator LessThan",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::LessThanOrEqual => match filter_column {
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator LessThanOrEqual",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::Like => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator Like",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::NotLike => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", v)),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator NotLike",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::In => match filter_column {
+                FilterColumn::StringList(c, v) => Ok(Filtering::sql_str_in(cs, c, "IN", v)),
+                FilterColumn::IntList(c, v) => Ok(Filtering::sql_str_in_int(c, "IN", v)),
+                FilterColumn::FloatList(c, v) => Ok(Filtering::sql_str_in_float(c, "IN", v)),
+                FilterColumn::BoolList(c, v) => Ok(Filtering::sql_str_in_bool(c, "IN", v)),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator In",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::NotIn => match filter_column {
+                FilterColumn::StringList(c, v) => Ok(Filtering::sql_str_in(cs, c, "NOT IN", v)),
+                FilterColumn::IntList(c, v) => Ok(Filtering::sql_str_in_int(c, "NOT IN", v)),
+                FilterColumn::FloatList(c, v) => Ok(Filtering::sql_str_in_float(c, "NOT IN", v)),
+                FilterColumn::BoolList(c, v) => Ok(Filtering::sql_str_in_bool(c, "NOT IN", v)),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator NotIn",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::IsNull => match filter_column {
+                FilterColumn::String(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
+                FilterColumn::Int(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
+                FilterColumn::Float(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
+                FilterColumn::Bool(c, _) => Ok(Filtering::sql_str_null(c, "IS NULL")),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator IsNull",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::IsNotNull => match filter_column {
+                FilterColumn::String(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
+                FilterColumn::Int(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
+                FilterColumn::Float(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
+                FilterColumn::Bool(c, _) => Ok(Filtering::sql_str_null(c, "IS NOT NULL")),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator IsNotNull",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::StartsWith => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator Like",
+                    filter_column.to_string()
+                )),
+            },
+            FilterOperator::EndsWith => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
+                _ => Err(eyre::eyre!(
+                    "Invalid column type '{}' for filter operator Like",
+                    filter_column.to_string()
+                )),
+            },
         }
     }
 
@@ -458,7 +582,11 @@ impl Filtering {
                 }
             }
 
-            let sql_string = Filtering::operators(case_insensitive, rule.filter_operator.clone(), rule.filter_column.clone());
+            let sql_string = Filtering::operators(
+                case_insensitive,
+                rule.filter_operator.clone(),
+                rule.filter_column.clone(),
+            );
             match sql_string {
                 Ok(v) => sql.push_str(v.as_str()),
                 Err(e) => eprintln!("{}", e),

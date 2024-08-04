@@ -164,7 +164,10 @@ impl PgFilters {
         let sorting = Sorting::new(sorting_columns);
 
         let filters = filtering_rules.map(|filtering_rules| {
-            Filtering::new(filtering_rules.filtering_rules, filtering_rules.case_insensitive)
+            Filtering::new(
+                filtering_rules.filtering_rules,
+                filtering_rules.case_insensitive,
+            )
         });
 
         PgFilters {
