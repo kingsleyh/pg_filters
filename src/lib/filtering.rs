@@ -70,10 +70,10 @@ impl<'a> From<&'a FilteringRule> for FilteringRule {
 
 impl FilteringRule {
     pub fn new(
-        conditional_operator: String,
+        conditional_operator: &str,
         column: ColumnName,
-        filter_operator: String,
-        value: String,
+        filter_operator: &str,
+        value: &str,
     ) -> eyre::Result<FilteringRule> {
         let filter_operator = match filter_operator.to_uppercase().as_str() {
             "=" => FilterOperator::Equal,
@@ -128,7 +128,7 @@ impl FilteringRule {
                 } else if value.to_lowercase() == "true" || value.to_lowercase() == "false" {
                     FilterValue::Bool(value.parse::<bool>()?)
                 } else {
-                    FilterValue::String(value)
+                    FilterValue::String(value.into())
                 }
             }
         };

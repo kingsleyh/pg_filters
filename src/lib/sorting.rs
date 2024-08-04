@@ -10,8 +10,8 @@
 //! use pg_filters::sorting::{SortedColumn, Sorting};
 //!
 //! let sorting = Sorting::new(vec![
-//!    SortedColumn::new("name", "asc".to_string()),
-//!    SortedColumn::new("age", "desc".to_string()),
+//!    SortedColumn::new("name", "asc"),
+//!    SortedColumn::new("age", "desc"),
 //! ]);
 //!
 //! assert_eq!(sorting.columns.len(), 2);
@@ -59,14 +59,14 @@ pub struct SortedColumn {
 /// use pg_filters::sorting::SortedColumn;
 /// use pg_filters::sorting::SortOrder;
 ///
-/// let column = SortedColumn::new("name", "asc".to_string());
+/// let column = SortedColumn::new("name", "asc");
 ///
 /// assert_eq!(column.column, "name");
 /// assert_eq!(column.order, SortOrder::Asc);
 /// ```
 ///
 impl SortedColumn {
-    pub fn new(column: &str, order: String) -> SortedColumn {
+    pub fn new(column: &str, order: &str) -> SortedColumn {
         let order = match order.to_lowercase().as_str() {
             "asc" => SortOrder::Asc,
             "desc" => SortOrder::Desc,
@@ -89,8 +89,8 @@ impl SortedColumn {
 /// use pg_filters::sorting::{SortedColumn, Sorting};
 ///
 /// let sorting = Sorting::new(vec![
-///    SortedColumn::new("name", "asc".to_string()),
-///    SortedColumn::new("age", "desc".to_string()),
+///    SortedColumn::new("name", "asc"),
+///    SortedColumn::new("age", "desc"),
 /// ]);
 ///
 /// assert_eq!(sorting.columns.len(), 2);
@@ -115,8 +115,8 @@ pub struct Sorting {
 /// use pg_filters::sorting::{SortedColumn, Sorting};
 ///
 /// let sorting = Sorting::new(vec![
-///    SortedColumn::new("name", "asc".to_string()),
-///    SortedColumn::new("age", "desc".to_string()),
+///    SortedColumn::new("name", "asc"),
+///    SortedColumn::new("age", "desc"),
 /// ]);
 ///
 /// assert_eq!(sorting.columns.len(), 2);

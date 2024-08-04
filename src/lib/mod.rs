@@ -14,12 +14,12 @@
 //!        total_records: 1000,
 //!    }),
 //!    vec![
-//!        SortedColumn::new("age".into(), "desc".into()),
-//!        SortedColumn::new("name".into(), "asc".into()),
+//!        SortedColumn::new("age", "desc"),
+//!        SortedColumn::new("name", "asc"),
 //!    ],
 //!    Some(FilteringOptions::new(vec![
-//!        FilteringRule::new("and".into(), ColumnName::String("name"), "=".into(), "John".into()),
-//!        FilteringRule::new("or".into(), ColumnName::Int("age"), ">".into(), "18".into()),
+//!        FilteringRule::new("and", ColumnName::String("name"), "=", "John"),
+//!        FilteringRule::new("or", ColumnName::Int("age"), ">", "18"),
 //!    ])),
 //!);
 //!
