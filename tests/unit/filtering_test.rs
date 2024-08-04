@@ -692,7 +692,7 @@ fn test_filtering_options_case_insensitive() {
     })]);
 
     assert_eq!(filtering_options.filtering_rules.len(), 1);
-    assert_eq!(filtering_options.case_insensitive, true);
+    assert!(filtering_options.case_insensitive);
 }
 
 #[test]
@@ -704,5 +704,5 @@ fn test_filtering_options_case_sensitive() {
     })]);
 
     assert_eq!(filtering_options.filtering_rules.len(), 1);
-    assert_eq!(filtering_options.case_insensitive, false);
+    assert!(!filtering_options.case_insensitive);
 }

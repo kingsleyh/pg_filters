@@ -5,10 +5,10 @@ use pg_filters::filtering::{
 #[test]
 fn test_filtering_rule() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("name"),
-        "=".into(),
-        "John".into(),
+        "=",
+        "John",
     )
     .unwrap();
 
@@ -26,7 +26,7 @@ fn test_filtering_rule() {
 #[test]
 fn test_filtering_rule_with_int_value() {
     let filtering_rule =
-        FilteringRule::new("or".into(), ColumnName::Int("age"), ">".into(), "18".into()).unwrap();
+        FilteringRule::new("or", ColumnName::Int("age"), ">", "18").unwrap();
 
     assert_eq!(filtering_rule.filter_column, FilterColumn::Int("age", 18));
     assert_eq!(filtering_rule.filter_operator, FilterOperator::GreaterThan);
@@ -36,10 +36,10 @@ fn test_filtering_rule_with_int_value() {
 #[test]
 fn test_filtering_rule_with_float_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Float("height"),
-        ">=".into(),
-        "5.5".into(),
+        ">=",
+        "5.5",
     )
     .unwrap();
 
@@ -60,10 +60,10 @@ fn test_filtering_rule_with_float_value() {
 #[test]
 fn test_filtering_rule_with_bool_value() {
     let filtering_rule = FilteringRule::new(
-        "or".into(),
+        "or",
         ColumnName::Bool("is_active"),
-        "=".into(),
-        "true".into(),
+        "=",
+        "true",
     )
     .unwrap();
 
@@ -78,10 +78,10 @@ fn test_filtering_rule_with_bool_value() {
 #[test]
 fn test_filtering_rule_with_null_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("email"),
-        "is null".into(),
-        "".into(),
+        "is null",
+        "",
     )
     .unwrap();
 
@@ -99,10 +99,10 @@ fn test_filtering_rule_with_null_value() {
 #[test]
 fn test_filtering_rule_with_not_null_value() {
     let filtering_rule = FilteringRule::new(
-        "or".into(),
+        "or",
         ColumnName::String("email"),
-        "is not null".into(),
-        "".into(),
+        "is not null",
+        "",
     )
     .unwrap();
 
@@ -117,10 +117,10 @@ fn test_filtering_rule_with_not_null_value() {
 #[test]
 fn test_filtering_rule_with_like_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("name"),
-        "like".into(),
-        "John".into(),
+        "like",
+        "John",
     )
     .unwrap();
 
@@ -138,10 +138,10 @@ fn test_filtering_rule_with_like_value() {
 #[test]
 fn test_filtering_rule_with_not_like_value() {
     let filtering_rule = FilteringRule::new(
-        "or".into(),
+        "or",
         ColumnName::String("name"),
-        "not like".into(),
-        "John".into(),
+        "not like",
+        "John",
     )
     .unwrap();
 
@@ -156,10 +156,10 @@ fn test_filtering_rule_with_not_like_value() {
 #[test]
 fn test_filtering_rule_with_string_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("name"),
-        "in".into(),
-        "John,Jane".into(),
+        "in",
+        "John,Jane",
     )
     .unwrap();
 
@@ -177,10 +177,10 @@ fn test_filtering_rule_with_string_in_value() {
 #[test]
 fn test_filtering_rule_with_int_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Int("name"),
-        "in".into(),
-        "1,2,3".into(),
+        "in",
+        "1,2,3",
     )
     .unwrap();
 
@@ -198,10 +198,10 @@ fn test_filtering_rule_with_int_in_value() {
 #[test]
 fn test_filtering_rule_with_float_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Float("name"),
-        "in".into(),
-        "1.1,2.2,3.0".into(),
+        "in",
+        "1.1,2.2,3.0",
     )
     .unwrap();
 
@@ -219,10 +219,10 @@ fn test_filtering_rule_with_float_in_value() {
 #[test]
 fn test_filtering_rule_with_bool_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Bool("name"),
-        "in".into(),
-        "true,false".into(),
+        "in",
+        "true,false",
     )
     .unwrap();
 
@@ -240,10 +240,10 @@ fn test_filtering_rule_with_bool_in_value() {
 #[test]
 fn test_filtering_rule_with_string_not_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("name"),
-        "not in".into(),
-        "John,Jane".into(),
+        "not in",
+        "John,Jane",
     )
     .unwrap();
 
@@ -261,10 +261,10 @@ fn test_filtering_rule_with_string_not_in_value() {
 #[test]
 fn test_filtering_rule_with_int_not_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Int("name"),
-        "not in".into(),
-        "1,2,3".into(),
+        "not in",
+        "1,2,3",
     )
     .unwrap();
 
@@ -282,10 +282,10 @@ fn test_filtering_rule_with_int_not_in_value() {
 #[test]
 fn test_filtering_rule_with_float_not_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Float("name"),
-        "not in".into(),
-        "1.1,2.2,3.0".into(),
+        "not in",
+        "1.1,2.2,3.0",
     )
     .unwrap();
 
@@ -303,10 +303,10 @@ fn test_filtering_rule_with_float_not_in_value() {
 #[test]
 fn test_filtering_rule_with_bool_not_in_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::Bool("name"),
-        "not in".into(),
-        "true,false".into(),
+        "not in",
+        "true,false",
     )
     .unwrap();
 
@@ -324,10 +324,10 @@ fn test_filtering_rule_with_bool_not_in_value() {
 #[test]
 fn test_filtering_rule_with_invalid_filter_operator() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("name"),
-        "}".into(),
-        "John".into(),
+        "}",
+        "John",
     )
     .unwrap();
 
@@ -345,10 +345,10 @@ fn test_filtering_rule_with_invalid_filter_operator() {
 #[test]
 fn test_filtering_rule_with_invalid_conditional_operator() {
     let filtering_rule = FilteringRule::new(
-        "}".into(),
+        "}",
         ColumnName::String("name"),
-        "=".into(),
-        "John".into(),
+        "=",
+        "John",
     )
     .unwrap();
 
@@ -366,10 +366,10 @@ fn test_filtering_rule_with_invalid_conditional_operator() {
 #[test]
 fn test_filtering_rule_with_starts_with_value() {
     let filtering_rule = FilteringRule::new(
-        "and".into(),
+        "and",
         ColumnName::String("name"),
-        "starts with".into(),
-        "John".into(),
+        "starts with",
+        "John",
     )
     .unwrap();
 
@@ -387,10 +387,10 @@ fn test_filtering_rule_with_starts_with_value() {
 #[test]
 fn test_filtering_rule_with_ends_with_value() {
     let filtering_rule = FilteringRule::new(
-        "or".into(),
+        "or",
         ColumnName::String("name"),
-        "ends with".into(),
-        "John".into(),
+        "ends with",
+        "John",
     )
     .unwrap();
 
