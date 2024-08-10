@@ -32,6 +32,38 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
     assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 ```
 
+If you need to apply the filtering rules for pagination you can get the sql for that from the filter options
+
+```rust
+let filtering_rules: Vec<eyre::Result<FilteringRule>> = vec![FilteringRule::new("where", ColumnName::String("name"), "=", "John")];
+
+let pagination_options = if filtering_rules.is_empty() {
+  let total_rows = db.query_one(total_rows_select_statement.as_str(), &[]).await.map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
+  let total_records = total_rows.get::<usize, i64>(0);
+
+  PaginationOptions::new(
+    current_page as i64,
+    per_page as i64,
+    50,
+    total_records as i64,
+  )
+} else {
+  let filtering_options = FilteringOptions::new(filtering_rules);
+  let filtering_sql = filtering_options.filtering.sql;
+  let filtering_sql = format!(
+    "select count(*) from {}", filtering_sql);
+
+  let total_rows = db.query_one(filtering_sql.as_str(), &[]).await.map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
+  let total_records = total_rows.get::<usize, i64>(0);
+  PaginationOptions::new(
+    current_page as i64,
+    per_page as i64,
+    50,
+    total_records as i64,
+  )
+}
+```
+
 ## Note
 
 * filter rules are applied in the order which they are supplied
