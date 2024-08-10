@@ -1,3 +1,26 @@
+## 2024-08-10, Version v0.1.7
+### Commits
+- [[`2a89a3ed24`](https://github.com/kingsleyh/pg_filters/commit/2a89a3ed242e82caf56f7ace3b7fc4c4d6aae16d)] 0.1.7 (kingsley.hendrickse)
+- [[`e68c89c9f0`](https://github.com/kingsleyh/pg_filters/commit/e68c89c9f0baa6ecfcfb49757f3de862fc38d156)] fix bug with conditional sql still being included for invalid rules (kingsley.hendrickse)
+- [[`7b3f1dd9a4`](https://github.com/kingsleyh/pg_filters/commit/7b3f1dd9a4ce3737ec09b1263d1fb858e2879474)] auto release to crates (kingsley.hendrickse)
+- [[`8b78708ec6`](https://github.com/kingsleyh/pg_filters/commit/8b78708ec60a3bae3caf274ad9a29ac9963fb8b3)] auto release tags (kingsley.hendrickse)
+- [[`3192ce09a7`](https://github.com/kingsleyh/pg_filters/commit/3192ce09a7409093a7bb090dd57e3251b2b2b4bb)] fix (kingsley.hendrickse)
+- [[`15d6e064f3`](https://github.com/kingsleyh/pg_filters/commit/15d6e064f37fbd8bd6e5ba621f50ff08a6daf33c)] fix (kingsley.hendrickse)
+- [[`40716871b8`](https://github.com/kingsleyh/pg_filters/commit/40716871b8e3fbdc20c123121578e34a678a9ddd)] changelog (kingsley.hendrickse)
+
+### Stats
+```diff
+ .github/workflows/release.yml         | 77 ++++++++++++++++++++++++++++++++++++-
+ CHANGELOG.md                          | 19 +++++++++-
+ Cargo.lock                            |  2 +-
+ Cargo.toml                            |  2 +-
+ src/lib/filtering.rs                  | 12 ++++--
+ src/lib/mod.rs                        |  4 +--
+ tests/integration/integration_test.rs |  7 ++-
+ tests/unit/filtering_test.rs          | 27 ++++++++++---
+ 8 files changed, 134 insertions(+), 16 deletions(-)
+```
+
 ## 2024-08-10, Version v0.1.6
 ### Commits
 - [[`49f896c3b6`](https://github.com/kingsleyh/pg_filters/commit/49f896c3b6e24cdd934226ddc5382779ce013b46)] 0.1.6 (kingsley.hendrickse)
