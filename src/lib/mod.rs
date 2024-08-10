@@ -122,7 +122,7 @@ pub struct FilteringOptions {
 }
 
 /// New function for FilteringOptions
-/// filtering_rules is a Vec<FilteringRule>
+/// filtering_rules is a Vec<eyre::Result<FilteringRule>>
 /// case_insensitive is a boolean to determine if the filtering rules should be case-insensitive
 /// By default, case_insensitive is true
 impl FilteringOptions {
@@ -133,6 +133,7 @@ impl FilteringOptions {
         }
     }
 
+    /// Function to return the filtering object to access the sql for filtering
     pub fn filtering(&self) -> Filtering {
         Filtering::new(&self.filtering_rules, self.case_insensitive)
     }
@@ -156,7 +157,7 @@ impl PgFilters {
     pub fn new(
         pagination: Option<PaginationOptions>,
         sorting_columns: Vec<SortedColumn>,
-        filtering_rules: Option<FilteringOptions>,
+        filtering_options: Option<FilteringOptions>,
     ) -> PgFilters {
         let pagination = pagination.map(|pagination| {
             Paginate::new(
@@ -169,11 +170,8 @@ impl PgFilters {
 
         let sorting = Sorting::new(sorting_columns);
 
-        let filters = filtering_rules.map(|filtering_rules| {
-            Filtering::new(
-                &filtering_rules.filtering_rules,
-                filtering_rules.case_insensitive,
-            )
+        let filters = filtering_options.map(|filtering_rules| {
+           filtering_rules.filtering()
         });
 
         PgFilters {
