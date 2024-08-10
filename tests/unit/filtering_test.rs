@@ -7,8 +7,7 @@ use pg_filters::{
 #[test]
 fn test_filtering() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -17,8 +16,7 @@ fn test_filtering() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -31,8 +29,7 @@ fn test_filtering() {
 #[test]
 fn test_filtering_case_sensitive() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -41,8 +38,7 @@ fn test_filtering_case_sensitive() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         false,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -52,8 +48,7 @@ fn test_filtering_case_sensitive() {
 #[test]
 fn test_filtering_with_bool() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -62,8 +57,7 @@ fn test_filtering_with_bool() {
                 filter_column: FilterColumn::Bool("completed", true),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -76,8 +70,7 @@ fn test_filtering_with_bool() {
 #[test]
 fn test_filtering_with_float() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -86,8 +79,7 @@ fn test_filtering_with_float() {
                 filter_column: FilterColumn::Float("value", 1.1),
                 filter_operator: FilterOperator::LessThanOrEqual,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -100,8 +92,7 @@ fn test_filtering_with_float() {
 #[test]
 fn test_filtering_with_duplicate_columns() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -110,8 +101,7 @@ fn test_filtering_with_duplicate_columns() {
                 filter_column: FilterColumn::String("name", "'Doe'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -124,7 +114,7 @@ fn test_filtering_with_duplicate_columns() {
 #[test]
 fn test_filtering_with_single_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'John'".to_string()),
             filter_operator: FilterOperator::Equal,
             conditional_operator: ConditionalOperator::And,
@@ -137,7 +127,7 @@ fn test_filtering_with_single_rule() {
 
 #[test]
 fn test_filtering_with_empty_rules() {
-    let filtering = Filtering::new(&vec![], true);
+    let filtering = Filtering::new(&[], true);
     assert_eq!(filtering.filters.len(), 0);
     assert_eq!(filtering.sql, "");
 }
@@ -145,8 +135,7 @@ fn test_filtering_with_empty_rules() {
 #[test]
 fn test_filtering_with_multiple_rules() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -155,8 +144,7 @@ fn test_filtering_with_multiple_rules() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -169,8 +157,7 @@ fn test_filtering_with_multiple_rules() {
 #[test]
 fn test_filtering_with_multiple_rules_swapped() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
@@ -179,8 +166,7 @@ fn test_filtering_with_multiple_rules_swapped() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::And,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -193,8 +179,7 @@ fn test_filtering_with_multiple_rules_swapped() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -208,8 +193,7 @@ fn test_filtering_with_multiple_rules_and_different_operators() {
                 filter_column: FilterColumn::String("city", "'New York'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -222,8 +206,7 @@ fn test_filtering_with_multiple_rules_and_different_operators() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
@@ -237,8 +220,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
                 filter_column: FilterColumn::String("city", "'New York'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -251,8 +233,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_swapped_and_mixed() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -266,8 +247,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped_and_mixed(
                 filter_column: FilterColumn::String("city", "'New York'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -280,7 +260,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped_and_mixed(
 #[test]
 fn test_filtering_with_equal_to_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'John'".to_string()),
             filter_operator: FilterOperator::Equal,
             conditional_operator: ConditionalOperator::And,
@@ -294,7 +274,7 @@ fn test_filtering_with_equal_to_rule() {
 #[test]
 fn test_filtering_with_not_equal_to_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'John'".to_string()),
             filter_operator: FilterOperator::NotEqual,
             conditional_operator: ConditionalOperator::And,
@@ -308,7 +288,7 @@ fn test_filtering_with_not_equal_to_rule() {
 #[test]
 fn test_filtering_with_greater_than_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::Int("age", 18),
             filter_operator: FilterOperator::GreaterThan,
             conditional_operator: ConditionalOperator::And,
@@ -322,7 +302,7 @@ fn test_filtering_with_greater_than_rule() {
 #[test]
 fn test_filtering_with_greater_than_or_equal_to_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::Int("age", 18),
             filter_operator: FilterOperator::GreaterThanOrEqual,
             conditional_operator: ConditionalOperator::And,
@@ -336,7 +316,7 @@ fn test_filtering_with_greater_than_or_equal_to_rule() {
 #[test]
 fn test_filtering_with_less_than_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::Int("age", 18),
             filter_operator: FilterOperator::LessThan,
             conditional_operator: ConditionalOperator::And,
@@ -350,7 +330,7 @@ fn test_filtering_with_less_than_rule() {
 #[test]
 fn test_filtering_with_less_than_or_equal_to_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::Int("age", 18),
             filter_operator: FilterOperator::LessThanOrEqual,
             conditional_operator: ConditionalOperator::And,
@@ -364,7 +344,7 @@ fn test_filtering_with_less_than_or_equal_to_rule() {
 #[test]
 fn test_filtering_with_like_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'%John%'".to_string()),
             filter_operator: FilterOperator::Like,
             conditional_operator: ConditionalOperator::And,
@@ -378,7 +358,7 @@ fn test_filtering_with_like_rule() {
 #[test]
 fn test_filtering_with_not_like_rule() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'%John%'".to_string()),
             filter_operator: FilterOperator::NotLike,
             conditional_operator: ConditionalOperator::And,
@@ -392,7 +372,7 @@ fn test_filtering_with_not_like_rule() {
 #[test]
 fn test_filtering_with_is_null() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "".to_string()),
             filter_operator: FilterOperator::IsNull,
             conditional_operator: ConditionalOperator::And,
@@ -406,7 +386,7 @@ fn test_filtering_with_is_null() {
 #[test]
 fn test_filtering_with_is_not_null() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "".to_string()),
             filter_operator: FilterOperator::IsNotNull,
             conditional_operator: ConditionalOperator::And,
@@ -420,7 +400,7 @@ fn test_filtering_with_is_not_null() {
 #[test]
 fn test_filtering_with_in_as_string() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::StringList(
                 "name",
                 vec!["John".to_string(), "Doe".to_string()],
@@ -440,7 +420,7 @@ fn test_filtering_with_in_as_string() {
 #[test]
 fn test_filtering_with_in_as_int() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::IntList("age", vec![21, 22, 23]),
             filter_operator: FilterOperator::In,
             conditional_operator: ConditionalOperator::And,
@@ -454,7 +434,7 @@ fn test_filtering_with_in_as_int() {
 #[test]
 fn test_filtering_with_in_as_float() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::FloatList("age", vec![2.1, 2.2, 2.3]),
             filter_operator: FilterOperator::In,
             conditional_operator: ConditionalOperator::And,
@@ -468,7 +448,7 @@ fn test_filtering_with_in_as_float() {
 #[test]
 fn test_filtering_with_in_as_bool() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::BoolList("age", vec![true, false]),
             filter_operator: FilterOperator::In,
             conditional_operator: ConditionalOperator::And,
@@ -482,7 +462,7 @@ fn test_filtering_with_in_as_bool() {
 #[test]
 fn test_filtering_with_not_in() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::StringList(
                 "name",
                 vec!["John".to_string(), "Doe".to_string()],
@@ -502,7 +482,7 @@ fn test_filtering_with_not_in() {
 #[test]
 fn test_filtering_with_starts_with() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'John%'".to_string()),
             filter_operator: FilterOperator::StartsWith,
             conditional_operator: ConditionalOperator::And,
@@ -516,7 +496,7 @@ fn test_filtering_with_starts_with() {
 #[test]
 fn test_filtering_with_ends_with() {
     let filtering = Filtering::new(
-        &vec![Ok(FilteringRule {
+        &[Ok(FilteringRule {
             filter_column: FilterColumn::String("name", "'%John'".to_string()),
             filter_operator: FilterOperator::EndsWith,
             conditional_operator: ConditionalOperator::And,
@@ -530,8 +510,7 @@ fn test_filtering_with_ends_with() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -545,8 +524,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
                 filter_column: FilterColumn::String("city", "'%New York%'".to_string()),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::And,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -559,8 +537,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
@@ -574,8 +551,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
                 filter_column: FilterColumn::String("city", "'%New York%'".to_string()),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -588,8 +564,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed() {
     let filtering = Filtering::new(
-        &vec![
-            Ok(FilteringRule {
+        &[Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -603,8 +578,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
                 filter_column: FilterColumn::String("city", "'%New York%'".to_string()),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::Or,
-            }),
-        ],
+            })],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
