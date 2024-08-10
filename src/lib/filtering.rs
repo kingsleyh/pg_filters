@@ -548,7 +548,7 @@ impl Filtering {
         }
     }
 
-    pub fn new(rules: Vec<eyre::Result<FilteringRule>>, case_insensitive: bool) -> Filtering {
+    pub fn new(rules: &Vec<eyre::Result<FilteringRule>>, case_insensitive: bool) -> Filtering {
         // log out any invalid rules to the console
         for rule in rules.iter() {
             match rule {

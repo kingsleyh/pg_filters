@@ -133,6 +133,10 @@ impl FilteringOptions {
         }
     }
 
+    pub fn filtering(&self) -> Filtering {
+        Filtering::new(&self.filtering_rules, self.case_insensitive)
+    }
+
     /// Function to create case-sensitive filtering rules
     pub fn case_sensitive(filtering_rules: Vec<eyre::Result<FilteringRule>>) -> FilteringOptions {
         FilteringOptions {
@@ -167,7 +171,7 @@ impl PgFilters {
 
         let filters = filtering_rules.map(|filtering_rules| {
             Filtering::new(
-                filtering_rules.filtering_rules,
+                &filtering_rules.filtering_rules,
                 filtering_rules.case_insensitive,
             )
         });
