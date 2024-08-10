@@ -54,7 +54,13 @@ async fn test_string_int() {
     ];
 
     assert_eq!(rows, expected_rows);
-    get_container().await.as_ref().unwrap().stop().await.unwrap();
+    get_container()
+        .await
+        .as_ref()
+        .unwrap()
+        .stop()
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -97,7 +103,13 @@ async fn test_float_bool() {
     let expected_rows = vec![("name4".to_string(), 4.0, true)];
 
     assert_eq!(rows, expected_rows);
-    get_container().await.as_ref().unwrap().stop().await.unwrap();
+    get_container()
+        .await
+        .as_ref()
+        .unwrap()
+        .stop()
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -144,7 +156,13 @@ async fn test_in() {
     ];
 
     assert_eq!(rows, expected_rows);
-    get_container().await.as_ref().unwrap().stop().await.unwrap();
+    get_container()
+        .await
+        .as_ref()
+        .unwrap()
+        .stop()
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -189,5 +207,11 @@ async fn test_starts_with() {
     ];
 
     assert_eq!(rows, expected_rows);
-    get_container().await.as_ref().unwrap().stop().await.unwrap();
+    get_container()
+        .await
+        .as_ref()
+        .unwrap()
+        .stop()
+        .await
+        .unwrap();
 }

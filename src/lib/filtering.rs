@@ -592,7 +592,7 @@ impl Filtering {
                 Ok(v) => {
                     sql.push_str(conditional_sql.as_str());
                     sql.push_str(v.as_str())
-                },
+                }
                 Err(e) => eprintln!("{}", e),
             }
         }

@@ -615,7 +615,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
 }
 
 #[test]
-fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed_and_repeated() {
+fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed_and_repeated(
+) {
     let filtering = Filtering::new(
         &vec![
             Ok(FilteringRule {
@@ -723,5 +724,8 @@ fn test_filtering_options_when_invalid_rules() {
 
     assert_eq!(filtering_options.filtering_rules.len(), 2);
     assert!(filtering_options.case_insensitive);
-    assert_eq!(filtering_options.filtering().sql, " WHERE LOWER(name) = LOWER('John')");
+    assert_eq!(
+        filtering_options.filtering().sql,
+        " WHERE LOWER(name) = LOWER('John')"
+    );
 }
