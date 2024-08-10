@@ -569,15 +569,16 @@ impl Filtering {
         let mut first = true;
 
         for rule in rules.iter() {
+            let mut conditional_sql = "".to_string();
             if first {
                 first = false;
             } else {
                 match rule.conditional_operator {
                     ConditionalOperator::And => {
-                        sql.push_str(" AND ");
+                        conditional_sql.push_str(" AND ");
                     }
                     ConditionalOperator::Or => {
-                        sql.push_str(" OR ");
+                        conditional_sql.push_str(" OR ");
                     }
                 }
             }
@@ -588,7 +589,10 @@ impl Filtering {
                 rule.filter_column.clone(),
             );
             match sql_string {
-                Ok(v) => sql.push_str(v.as_str()),
+                Ok(v) => {
+                    sql.push_str(conditional_sql.as_str());
+                    sql.push_str(v.as_str())
+                },
                 Err(e) => eprintln!("{}", e),
             }
         }

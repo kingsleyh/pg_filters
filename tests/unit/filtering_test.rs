@@ -1,4 +1,4 @@
-use pg_filters::filtering::FilterColumn;
+use pg_filters::filtering::{ColumnName, FilterColumn};
 use pg_filters::{
     filtering::{ConditionalOperator, FilterOperator, Filtering, FilteringRule},
     FilteringOptions,
@@ -615,8 +615,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
 }
 
 #[test]
-fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed_and_repeated(
-) {
+fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed_and_repeated() {
     let filtering = Filtering::new(
         &vec![
             Ok(FilteringRule {
@@ -713,4 +712,16 @@ fn test_filtering_options_case_sensitive() {
         .filtering()
         .sql
         .contains("WHERE name = 'John'"));
+}
+
+#[test]
+fn test_filtering_options_when_invalid_rules() {
+    let filtering_options = FilteringOptions::new(vec![
+        FilteringRule::new("and", ColumnName::String("name"), "=", "John"),
+        FilteringRule::new("and", ColumnName::String("name"), ">", "John"),
+    ]);
+
+    assert_eq!(filtering_options.filtering_rules.len(), 2);
+    assert!(filtering_options.case_insensitive);
+    assert_eq!(filtering_options.filtering().sql, " WHERE LOWER(name) = LOWER('John')");
 }
