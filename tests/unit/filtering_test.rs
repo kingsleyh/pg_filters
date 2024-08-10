@@ -693,7 +693,10 @@ fn test_filtering_options_case_insensitive() {
 
     assert_eq!(filtering_options.filtering_rules.len(), 1);
     assert!(filtering_options.case_insensitive);
-    assert!(filtering_options.filtering().sql.contains("WHERE LOWER(name) = LOWER('John')"));
+    assert!(filtering_options
+        .filtering()
+        .sql
+        .contains("WHERE LOWER(name) = LOWER('John')"));
 }
 
 #[test]
@@ -706,5 +709,8 @@ fn test_filtering_options_case_sensitive() {
 
     assert_eq!(filtering_options.filtering_rules.len(), 1);
     assert!(!filtering_options.case_insensitive);
-    assert!(filtering_options.filtering().sql.contains("WHERE name = 'John'"));
+    assert!(filtering_options
+        .filtering()
+        .sql
+        .contains("WHERE name = 'John'"));
 }

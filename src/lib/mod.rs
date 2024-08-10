@@ -170,9 +170,7 @@ impl PgFilters {
 
         let sorting = Sorting::new(sorting_columns);
 
-        let filters = filtering_options.map(|filtering_rules| {
-           filtering_rules.filtering()
-        });
+        let filters = filtering_options.map(|filtering_rules| filtering_rules.filtering());
 
         PgFilters {
             pagination,
