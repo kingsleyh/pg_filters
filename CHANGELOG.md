@@ -1,3 +1,22 @@
+## 2024-08-10, Version v0.1.6
+### Commits
+- [[`49f896c3b6`](https://github.com/kingsleyh/pg_filters/commit/49f896c3b6e24cdd934226ddc5382779ce013b46)] 0.1.6 (kingsley.hendrickse)
+- [[`ac832a39e1`](https://github.com/kingsleyh/pg_filters/commit/ac832a39e1e17b20c4cd033b0200bfeb3fd3f89c)] readme (kingsley.hendrickse)
+- [[`6c939298b3`](https://github.com/kingsleyh/pg_filters/commit/6c939298b3b163fb93ffb12040ecd14b910c2cd8)] tidy (kingsley.hendrickse)
+- [[`5b339a1a3e`](https://github.com/kingsleyh/pg_filters/commit/5b339a1a3e60c7c64f78b2d1bfc9d9f3c43e3bcc)] allow sql to be accessed from filtering_options (kingsley.hendrickse)
+- [[`c7f96c36fc`](https://github.com/kingsleyh/pg_filters/commit/c7f96c36fc82fb0ea20a9f152e15a8297ed4695e)] readme (kingsley.hendrickse)
+- [[`1e0bbc1c21`](https://github.com/kingsleyh/pg_filters/commit/1e0bbc1c21b83f7ba77816dbaf8eecc9bf673b30)] docs (kingsley.hendrickse)
+
+### Stats
+```diff
+ Cargo.toml                   |  2 +-
+ README.md                    | 40 ++++++++++++++++++++++++--
+ src/lib/filtering.rs         |  2 +-
+ src/lib/mod.rs               | 18 +++++++-----
+ tests/unit/filtering_test.rs | 70 +++++++++++++++++++++++----------------------
+ 5 files changed, 87 insertions(+), 45 deletions(-)
+```
+
 ## 2024-08-04, Version v0.1.5
 ### Commits
 - [[`bdbe472276`](https://github.com/kingsleyh/pg_filters/commit/bdbe472276e0e814bd2a58f7e06b6307c343e8c8)] prepare release v0.1.5 (kingsley.hendrickse)
