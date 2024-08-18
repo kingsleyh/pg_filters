@@ -615,6 +615,70 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
 }
 
 #[test]
+fn test_filtering_auto_conversions_when_wrong_type_passed() {
+    let filtering = Filtering::new(
+        &[
+            Ok(FilteringRule {
+                filter_column: FilterColumn::String("age", "'18'".to_string()),
+                filter_operator: FilterOperator::GreaterThan,
+                conditional_operator: ConditionalOperator::And,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::String("height", "'20.3'".to_string()),
+                filter_operator: FilterOperator::GreaterThanOrEqual,
+                conditional_operator: ConditionalOperator::And,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::String("age", "'18'".to_string()),
+                filter_operator: FilterOperator::LessThan,
+                conditional_operator: ConditionalOperator::And,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::String("age", "'0.2'".to_string()),
+                filter_operator: FilterOperator::LessThanOrEqual,
+                conditional_operator: ConditionalOperator::And,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::Int("code", 12),
+                filter_operator: FilterOperator::Like,
+                conditional_operator: ConditionalOperator::Or,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::Float("count", 10.4),
+                filter_operator: FilterOperator::Like,
+                conditional_operator: ConditionalOperator::Or,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::Bool("shipped", true),
+                filter_operator: FilterOperator::Like,
+                conditional_operator: ConditionalOperator::Or,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::Int("code2", 12),
+                filter_operator: FilterOperator::NotLike,
+                conditional_operator: ConditionalOperator::Or,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::Float("count2", 10.4),
+                filter_operator: FilterOperator::NotLike,
+                conditional_operator: ConditionalOperator::Or,
+            }),
+            Ok(FilteringRule {
+                filter_column: FilterColumn::Bool("shipped2", true),
+                filter_operator: FilterOperator::NotLike,
+                conditional_operator: ConditionalOperator::Or,
+            }),
+        ],
+        true,
+    );
+    assert_eq!(filtering.filters.len(), 10);
+    assert_eq!(
+        filtering.sql,
+        " WHERE age > 18 AND height >= 20.3 AND age < 18 AND age <= 0.2 OR LOWER(code) LIKE LOWER('%12%') OR LOWER(count) LIKE LOWER('%10.4%') OR LOWER(shipped) LIKE LOWER('%true%') OR LOWER(code2) NOT LIKE LOWER('%12%') OR LOWER(count2) NOT LIKE LOWER('%10.4%') OR LOWER(shipped2) NOT LIKE LOWER('%true%')"
+    );
+}
+
+#[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed_and_repeated(
 ) {
     let filtering = Filtering::new(

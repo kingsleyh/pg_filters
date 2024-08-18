@@ -483,6 +483,15 @@ impl Filtering {
             FilterOperator::GreaterThan => match filter_column {
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::String(c, v) => {
+                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
+                        eyre::eyre!( "GreaterThan does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
+                    })?;
+                    Ok(Filtering::sql_str(c, ">", v.to_string()))
+                }
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator GreaterThan",
                     filter_column.to_string()
@@ -491,6 +500,15 @@ impl Filtering {
             FilterOperator::GreaterThanOrEqual => match filter_column {
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::String(c, v) => {
+                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
+                        eyre::eyre!( "GreaterThanOrEqual does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
+                    })?;
+                    Ok(Filtering::sql_str(c, ">=", v.to_string()))
+                }
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator GreaterThanOrEqual",
                     filter_column.to_string()
@@ -499,6 +517,15 @@ impl Filtering {
             FilterOperator::LessThan => match filter_column {
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::String(c, v) => {
+                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
+                        eyre::eyre!( "LessThan does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
+                    })?;
+                    Ok(Filtering::sql_str(c, "<", v.to_string()))
+                }
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator LessThan",
                     filter_column.to_string()
@@ -507,6 +534,15 @@ impl Filtering {
             FilterOperator::LessThanOrEqual => match filter_column {
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::String(c, v) => {
+                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
+                        eyre::eyre!( "LessThanOrEqual does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
+                    })?;
+                    Ok(Filtering::sql_str(c, "<=", v.to_string()))
+                }
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator LessThanOrEqual",
                     filter_column.to_string()
@@ -514,6 +550,12 @@ impl Filtering {
             },
             FilterOperator::Like => match filter_column {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}%'", v.to_string()))),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs , c, "LIKE", format!("'%{}%'", v.to_string()))),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}%'", v.to_string()))),
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator Like",
                     filter_column.to_string()
@@ -521,6 +563,12 @@ impl Filtering {
             },
             FilterOperator::NotLike => match filter_column {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", v)),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", format!("'%{}%'", v.to_string()))),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", format!("'%{}%'", v.to_string()))),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", format!("'%{}%'", v.to_string()))),
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator NotLike",
                     filter_column.to_string()
@@ -568,6 +616,12 @@ impl Filtering {
             },
             FilterOperator::StartsWith => match filter_column {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'{}%'", v.to_string()))),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'{}%'", v.to_string()))),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'{}%'", v.to_string()))),
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator Like",
                     filter_column.to_string()
@@ -575,6 +629,12 @@ impl Filtering {
             },
             FilterOperator::EndsWith => match filter_column {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
+
+                // try to convert the value to a valid type for the operator
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}'", v.to_string()))),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}'", v.to_string()))),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}'", v.to_string()))),
+
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator Like",
                     filter_column.to_string()
