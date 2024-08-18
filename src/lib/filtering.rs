@@ -552,9 +552,24 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
 
                 // try to convert the value to a valid type for the operator
-                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}%'", v.to_string()))),
-                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs , c, "LIKE", format!("'%{}%'", v.to_string()))),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}%'", v.to_string()))),
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'%{}%'", v.to_string()),
+                )),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'%{}%'", v.to_string()),
+                )),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'%{}%'", v.to_string()),
+                )),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator Like",
@@ -565,9 +580,24 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", v)),
 
                 // try to convert the value to a valid type for the operator
-                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", format!("'%{}%'", v.to_string()))),
-                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", format!("'%{}%'", v.to_string()))),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "NOT LIKE", format!("'%{}%'", v.to_string()))),
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "NOT LIKE",
+                    format!("'%{}%'", v.to_string()),
+                )),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "NOT LIKE",
+                    format!("'%{}%'", v.to_string()),
+                )),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "NOT LIKE",
+                    format!("'%{}%'", v.to_string()),
+                )),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator NotLike",
@@ -618,9 +648,24 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
 
                 // try to convert the value to a valid type for the operator
-                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'{}%'", v.to_string()))),
-                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'{}%'", v.to_string()))),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'{}%'", v.to_string()))),
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'{}%'", v.to_string()),
+                )),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'{}%'", v.to_string()),
+                )),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'{}%'", v.to_string()),
+                )),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator Like",
@@ -631,9 +676,24 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", v)),
 
                 // try to convert the value to a valid type for the operator
-                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}'", v.to_string()))),
-                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}'", v.to_string()))),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "LIKE", format!("'%{}'", v.to_string()))),
+                FilterColumn::Int(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'%{}'", v.to_string()),
+                )),
+                FilterColumn::Float(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'%{}'", v.to_string()),
+                )),
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(
+                    cs,
+                    c,
+                    "LIKE",
+                    format!("'%{}'", v.to_string()),
+                )),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator Like",
