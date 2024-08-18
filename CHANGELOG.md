@@ -1,3 +1,21 @@
+## 2024-08-18, Version v0.1.9
+### Commits
+- [[`70317c8b44`](https://github.com/kingsleyh/pg_filters/commit/70317c8b44af70e0dfd9af9dc45065bef3c52181)] 0.1.9 (kingsley.hendrickse)
+- [[`2f2728f895`](https://github.com/kingsleyh/pg_filters/commit/2f2728f895d17b3fa8a341338dafae734920e1bb)] fix (kingsley.hendrickse)
+- [[`6acb2414a6`](https://github.com/kingsleyh/pg_filters/commit/6acb2414a6585165226591de74a4cf74c7a8aa84)] fix (kingsley.hendrickse)
+- [[`8ed7b525b4`](https://github.com/kingsleyh/pg_filters/commit/8ed7b525b42143ce3d8340aa277ef139baf1bd22)] try to auto convert types for operators where incorrect types were supplied for the filter value for the column type (kingsley.hendrickse)
+- [[`472b9a2b4f`](https://github.com/kingsleyh/pg_filters/commit/472b9a2b4fa736a1d2ea3570ef98332fe0fa6928)] fix (kingsley.hendrickse)
+- [[`3d04399080`](https://github.com/kingsleyh/pg_filters/commit/3d04399080d9c947a85bda727abfc987e81932ac)] changelog (kingsley.hendrickse)
+
+### Stats
+```diff
+ CHANGELOG.md                 | 17 ++++++++-
+ Cargo.toml                   |  2 +-
+ src/lib/filtering.rs         | 95 ++++++++++++++++++++++++++++++++++++++++++++-
+ tests/unit/filtering_test.rs | 64 ++++++++++++++++++++++++++++++-
+ 4 files changed, 176 insertions(+), 2 deletions(-)
+```
+
 ## 2024-08-18, Version v0.1.8
 ### Commits
 - [[`4643f01126`](https://github.com/kingsleyh/pg_filters/commit/4643f01126528f61f815ca90123aaad5aee2d743)] fix (kingsley.hendrickse)
