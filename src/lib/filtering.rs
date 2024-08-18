@@ -116,30 +116,48 @@ impl FilteringRule {
 
         let value = match filter_operator {
             FilterOperator::In | FilterOperator::NotIn => {
-                        let values = value
-                            .split(',')
-                            .map(|v| v.trim().to_string())
-                            .collect::<Vec<String>>();
+                let values = value
+                    .split(',')
+                    .map(|v| v.trim().to_string())
+                    .collect::<Vec<String>>();
                 match column {
                     ColumnName::String(c) => FilterValue::StringList(values),
                     ColumnName::Int(c) => {
-                        let values = values.into_iter().flat_map(|v| v.parse::<i64>().ok()).collect::<Vec<i64>>();
+                        let values = values
+                            .into_iter()
+                            .flat_map(|v| v.parse::<i64>().ok())
+                            .collect::<Vec<i64>>();
                         if values.is_empty() {
-                            return Err(eyre::eyre!("No valid Int values found for IN/NOT IN filter for column '{}'", c));
+                            return Err(eyre::eyre!(
+                                "No valid Int values found for IN/NOT IN filter for column '{}'",
+                                c
+                            ));
                         }
                         FilterValue::IntList(values)
                     }
                     ColumnName::Float(c) => {
-                        let values = values.into_iter().flat_map(|v| v.parse::<f64>().ok()).collect::<Vec<f64>>();
+                        let values = values
+                            .into_iter()
+                            .flat_map(|v| v.parse::<f64>().ok())
+                            .collect::<Vec<f64>>();
                         if values.is_empty() {
-                            return Err(eyre::eyre!("No valid Float values found for IN/NOT IN filter for column: '{}'", c));
+                            return Err(eyre::eyre!(
+                                "No valid Float values found for IN/NOT IN filter for column: '{}'",
+                                c
+                            ));
                         }
                         FilterValue::FloatList(values)
                     }
                     ColumnName::Bool(c) => {
-                        let values = values.into_iter().flat_map(|v| v.parse::<bool>().ok()).collect::<Vec<bool>>();
+                        let values = values
+                            .into_iter()
+                            .flat_map(|v| v.parse::<bool>().ok())
+                            .collect::<Vec<bool>>();
                         if values.is_empty() {
-                            return Err(eyre::eyre!("No valid Bool values found for IN/NOT IN filter for column: '{}'", c));
+                            return Err(eyre::eyre!(
+                                "No valid Bool values found for IN/NOT IN filter for column: '{}'",
+                                c
+                            ));
                         }
                         FilterValue::BoolList(values)
                     }
@@ -148,23 +166,35 @@ impl FilteringRule {
             FilterOperator::IsNull | FilterOperator::IsNotNull => {
                 FilterValue::String("".to_string())
             }
-            _ => {
-                match column {
-                    ColumnName::String(c) => FilterValue::String(value.into()),
-                    ColumnName::Int(c) => {
-                        let value = value.parse::<i64>().map_err(|_| eyre::eyre!("Invalid value: '{}' for column: '{}' of type Int", value, c))?;
-                        FilterValue::Int(value)
-                    }
-                    ColumnName::Float(c) => {
-                        let value = value.parse::<f64>().map_err(|_| eyre::eyre!("Invalid value: '{}' for column: '{}' of type Float", value, c))?;
-                        FilterValue::Float(value)
-                    }
-                    ColumnName::Bool(c) => {
-                        let value = value.parse::<bool>().map_err(|_| eyre::eyre!("Invalid value: '{}' for column: '{}' of type Bool", value, c))?;
-                        FilterValue::Bool(value)
-                    }
+            _ => match column {
+                ColumnName::String(c) => FilterValue::String(value.into()),
+                ColumnName::Int(c) => {
+                    let value = value.parse::<i64>().map_err(|_| {
+                        eyre::eyre!("Invalid value: '{}' for column: '{}' of type Int", value, c)
+                    })?;
+                    FilterValue::Int(value)
                 }
-            }
+                ColumnName::Float(c) => {
+                    let value = value.parse::<f64>().map_err(|_| {
+                        eyre::eyre!(
+                            "Invalid value: '{}' for column: '{}' of type Float",
+                            value,
+                            c
+                        )
+                    })?;
+                    FilterValue::Float(value)
+                }
+                ColumnName::Bool(c) => {
+                    let value = value.parse::<bool>().map_err(|_| {
+                        eyre::eyre!(
+                            "Invalid value: '{}' for column: '{}' of type Bool",
+                            value,
+                            c
+                        )
+                    })?;
+                    FilterValue::Bool(value)
+                }
+            },
         };
 
         let filter_column =

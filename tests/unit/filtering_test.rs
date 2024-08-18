@@ -7,7 +7,8 @@ use pg_filters::{
 #[test]
 fn test_filtering() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -16,7 +17,8 @@ fn test_filtering() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -29,7 +31,8 @@ fn test_filtering() {
 #[test]
 fn test_filtering_case_sensitive() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -38,7 +41,8 @@ fn test_filtering_case_sensitive() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         false,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -48,7 +52,8 @@ fn test_filtering_case_sensitive() {
 #[test]
 fn test_filtering_with_bool() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -57,7 +62,8 @@ fn test_filtering_with_bool() {
                 filter_column: FilterColumn::Bool("completed", true),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -70,7 +76,8 @@ fn test_filtering_with_bool() {
 #[test]
 fn test_filtering_with_float() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -79,7 +86,8 @@ fn test_filtering_with_float() {
                 filter_column: FilterColumn::Float("value", 1.1),
                 filter_operator: FilterOperator::LessThanOrEqual,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -92,7 +100,8 @@ fn test_filtering_with_float() {
 #[test]
 fn test_filtering_with_duplicate_columns() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -101,7 +110,8 @@ fn test_filtering_with_duplicate_columns() {
                 filter_column: FilterColumn::String("name", "'Doe'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -135,7 +145,8 @@ fn test_filtering_with_empty_rules() {
 #[test]
 fn test_filtering_with_multiple_rules() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -144,7 +155,8 @@ fn test_filtering_with_multiple_rules() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -157,7 +169,8 @@ fn test_filtering_with_multiple_rules() {
 #[test]
 fn test_filtering_with_multiple_rules_swapped() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
@@ -166,7 +179,8 @@ fn test_filtering_with_multiple_rules_swapped() {
                 filter_column: FilterColumn::Int("age", 18),
                 filter_operator: FilterOperator::GreaterThan,
                 conditional_operator: ConditionalOperator::And,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 2);
@@ -179,7 +193,8 @@ fn test_filtering_with_multiple_rules_swapped() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -193,7 +208,8 @@ fn test_filtering_with_multiple_rules_and_different_operators() {
                 filter_column: FilterColumn::String("city", "'New York'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -206,7 +222,8 @@ fn test_filtering_with_multiple_rules_and_different_operators() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
@@ -220,7 +237,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
                 filter_column: FilterColumn::String("city", "'New York'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -233,7 +251,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_swapped_and_mixed() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -247,7 +266,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_swapped_and_mixed(
                 filter_column: FilterColumn::String("city", "'New York'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -510,7 +530,8 @@ fn test_filtering_with_ends_with() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -524,7 +545,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
                 filter_column: FilterColumn::String("city", "'%New York%'".to_string()),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::And,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -537,7 +559,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values() {
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::Or,
@@ -551,7 +574,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
                 filter_column: FilterColumn::String("city", "'%New York%'".to_string()),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
@@ -564,7 +588,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
 #[test]
 fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped_and_mixed() {
     let filtering = Filtering::new(
-        &[Ok(FilteringRule {
+        &[
+            Ok(FilteringRule {
                 filter_column: FilterColumn::String("name", "'John'".to_string()),
                 filter_operator: FilterOperator::Equal,
                 conditional_operator: ConditionalOperator::And,
@@ -578,7 +603,8 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
                 filter_column: FilterColumn::String("city", "'%New York%'".to_string()),
                 filter_operator: FilterOperator::Like,
                 conditional_operator: ConditionalOperator::Or,
-            })],
+            }),
+        ],
         true,
     );
     assert_eq!(filtering.filters.len(), 3);
