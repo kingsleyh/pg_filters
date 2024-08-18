@@ -167,7 +167,7 @@ impl FilteringRule {
                 FilterValue::String("".to_string())
             }
             _ => match column {
-                ColumnName::String(c) => FilterValue::String(value.into()),
+                ColumnName::String(_c) => FilterValue::String(value.into()),
                 ColumnName::Int(c) => {
                     let value = value.parse::<i64>().map_err(|_| {
                         eyre::eyre!("Invalid value: '{}' for column: '{}' of type Int", value, c)
