@@ -116,48 +116,53 @@ impl FilteringRule {
 
         let value = match filter_operator {
             FilterOperator::In | FilterOperator::NotIn => {
-                let values = value
-                    .split(',')
-                    .map(|v| v.trim().to_string())
-                    .collect::<Vec<String>>();
-                let first = values
-                    .first()
-                    .ok_or(eyre::eyre!("No values found for IN/NOT IN filter"))?;
-
-                if first.parse::<i64>().is_ok() {
-                    let values = values
-                        .iter()
-                        .map(|v| v.parse::<i64>())
-                        .collect::<Result<Vec<i64>, _>>()?;
-                    FilterValue::IntList(values)
-                } else if first.parse::<f64>().is_ok() {
-                    let values = values
-                        .iter()
-                        .map(|v| v.parse::<f64>())
-                        .collect::<Result<Vec<f64>, _>>()?;
-                    FilterValue::FloatList(values)
-                } else if first.to_lowercase() == "true" || first.to_lowercase() == "false" {
-                    let values = values
-                        .iter()
-                        .map(|v| v.parse::<bool>())
-                        .collect::<Result<Vec<bool>, _>>()?;
-                    FilterValue::BoolList(values)
-                } else {
-                    FilterValue::StringList(values)
+                        let values = value
+                            .split(',')
+                            .map(|v| v.trim().to_string())
+                            .collect::<Vec<String>>();
+                match column {
+                    ColumnName::String(c) => FilterValue::StringList(values),
+                    ColumnName::Int(c) => {
+                        let values = values.into_iter().flat_map(|v| v.parse::<i64>().ok()).collect::<Vec<i64>>();
+                        if values.is_empty() {
+                            return Err(eyre::eyre!("No valid Int values found for IN/NOT IN filter for column '{}'", c));
+                        }
+                        FilterValue::IntList(values)
+                    }
+                    ColumnName::Float(c) => {
+                        let values = values.into_iter().flat_map(|v| v.parse::<f64>().ok()).collect::<Vec<f64>>();
+                        if values.is_empty() {
+                            return Err(eyre::eyre!("No valid Float values found for IN/NOT IN filter for column: '{}'", c));
+                        }
+                        FilterValue::FloatList(values)
+                    }
+                    ColumnName::Bool(c) => {
+                        let values = values.into_iter().flat_map(|v| v.parse::<bool>().ok()).collect::<Vec<bool>>();
+                        if values.is_empty() {
+                            return Err(eyre::eyre!("No valid Bool values found for IN/NOT IN filter for column: '{}'", c));
+                        }
+                        FilterValue::BoolList(values)
+                    }
                 }
             }
             FilterOperator::IsNull | FilterOperator::IsNotNull => {
                 FilterValue::String("".to_string())
             }
             _ => {
-                if value.parse::<i64>().is_ok() {
-                    FilterValue::Int(value.parse::<i64>()?)
-                } else if value.parse::<f64>().is_ok() {
-                    FilterValue::Float(value.parse::<f64>()?)
-                } else if value.to_lowercase() == "true" || value.to_lowercase() == "false" {
-                    FilterValue::Bool(value.parse::<bool>()?)
-                } else {
-                    FilterValue::String(value.into())
+                match column {
+                    ColumnName::String(c) => FilterValue::String(value.into()),
+                    ColumnName::Int(c) => {
+                        let value = value.parse::<i64>().map_err(|_| eyre::eyre!("Invalid value: '{}' for column: '{}' of type Int", value, c))?;
+                        FilterValue::Int(value)
+                    }
+                    ColumnName::Float(c) => {
+                        let value = value.parse::<f64>().map_err(|_| eyre::eyre!("Invalid value: '{}' for column: '{}' of type Float", value, c))?;
+                        FilterValue::Float(value)
+                    }
+                    ColumnName::Bool(c) => {
+                        let value = value.parse::<bool>().map_err(|_| eyre::eyre!("Invalid value: '{}' for column: '{}' of type Bool", value, c))?;
+                        FilterValue::Bool(value)
+                    }
                 }
             }
         };
@@ -240,7 +245,7 @@ impl Filtering {
                     }
                     _ => Err(eyre::eyre!(
                         "Invalid value: '{}' for column: '{}' of type String",
-                        value.to_string(),
+                        value,
                         c
                     )),
                 }
