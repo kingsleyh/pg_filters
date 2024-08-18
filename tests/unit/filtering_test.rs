@@ -615,7 +615,7 @@ fn test_filtering_with_multiple_rules_and_different_operators_and_values_swapped
 }
 
 #[test]
-fn test_filtering_auto_conversions_when_wrong_type_passed() {
+fn test_filtering_auto_conversions_when_wrong_type_passed_for_non_strings() {
     let filtering = Filtering::new(
         &[
             Ok(FilteringRule {
@@ -674,7 +674,7 @@ fn test_filtering_auto_conversions_when_wrong_type_passed() {
     assert_eq!(filtering.filters.len(), 10);
     assert_eq!(
         filtering.sql,
-        " WHERE age > 18 AND height >= 20.3 AND age < 18 AND age <= 0.2 OR LOWER(code) LIKE LOWER('%12%') OR LOWER(count) LIKE LOWER('%10.4%') OR LOWER(shipped) LIKE LOWER('%true%') OR LOWER(code2) NOT LIKE LOWER('%12%') OR LOWER(count2) NOT LIKE LOWER('%10.4%') OR LOWER(shipped2) NOT LIKE LOWER('%true%')"
+        " WHERE LOWER(age) > LOWER('18') AND LOWER(height) >= LOWER('20.3') AND LOWER(age) < LOWER('18') AND LOWER(age) <= LOWER('0.2') OR LOWER(code) LIKE LOWER('%12%') OR LOWER(count) LIKE LOWER('%10.4%') OR LOWER(shipped) LIKE LOWER('%true%') OR LOWER(code2) NOT LIKE LOWER('%12%') OR LOWER(count2) NOT LIKE LOWER('%10.4%') OR LOWER(shipped2) NOT LIKE LOWER('%true%')"
     );
 }
 
@@ -777,19 +777,4 @@ fn test_filtering_options_case_sensitive() {
         .filtering()
         .sql
         .contains("WHERE name = 'John'"));
-}
-
-#[test]
-fn test_filtering_options_when_invalid_rules() {
-    let filtering_options = FilteringOptions::new(vec![
-        FilteringRule::new("and", ColumnName::String("name"), "=", "John"),
-        FilteringRule::new("and", ColumnName::String("name"), ">", "John"),
-    ]);
-
-    assert_eq!(filtering_options.filtering_rules.len(), 2);
-    assert!(filtering_options.case_insensitive);
-    assert_eq!(
-        filtering_options.filtering().sql,
-        " WHERE LOWER(name) = LOWER('John')"
-    );
 }

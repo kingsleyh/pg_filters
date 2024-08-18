@@ -481,16 +481,10 @@ impl Filtering {
                 )),
             },
             FilterOperator::GreaterThan => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, ">", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
-
-                // try to convert the value to a valid type for the operator
-                FilterColumn::String(c, v) => {
-                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
-                        eyre::eyre!( "GreaterThan does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
-                    })?;
-                    Ok(Filtering::sql_str(c, ">", v.to_string()))
-                }
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, ">", format!("'{}'", v))),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator GreaterThan",
@@ -498,16 +492,10 @@ impl Filtering {
                 )),
             },
             FilterOperator::GreaterThanOrEqual => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, ">=", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
-
-                // try to convert the value to a valid type for the operator
-                FilterColumn::String(c, v) => {
-                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
-                        eyre::eyre!( "GreaterThanOrEqual does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
-                    })?;
-                    Ok(Filtering::sql_str(c, ">=", v.to_string()))
-                }
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, ">=", format!("'{}'", v))),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator GreaterThanOrEqual",
@@ -515,16 +503,10 @@ impl Filtering {
                 )),
             },
             FilterOperator::LessThan => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "<", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
-
-                // try to convert the value to a valid type for the operator
-                FilterColumn::String(c, v) => {
-                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
-                        eyre::eyre!( "LessThan does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
-                    })?;
-                    Ok(Filtering::sql_str(c, "<", v.to_string()))
-                }
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "<", format!("'{}'", v))),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator LessThan",
@@ -532,16 +514,10 @@ impl Filtering {
                 )),
             },
             FilterOperator::LessThanOrEqual => match filter_column {
+                FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "<=", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
-
-                // try to convert the value to a valid type for the operator
-                FilterColumn::String(c, v) => {
-                    let v = v.replace("'","").parse::<f64>().ok().ok_or_else(|| {
-                        eyre::eyre!( "LessThanOrEqual does not support String and auto conversion to Float failed with value: '{}' for column: '{}'",v,c)
-                    })?;
-                    Ok(Filtering::sql_str(c, "<=", v.to_string()))
-                }
+                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "<=", format!("'{}'", v))),
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator LessThanOrEqual",
