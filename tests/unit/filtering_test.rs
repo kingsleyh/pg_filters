@@ -1,4 +1,4 @@
-use pg_filters::filtering::{ColumnName, FilterColumn};
+use pg_filters::filtering::FilterColumn;
 use pg_filters::{
     filtering::{ConditionalOperator, FilterOperator, Filtering, FilteringRule},
     FilteringOptions,
