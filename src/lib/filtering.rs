@@ -484,7 +484,9 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, ">", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">", v.to_string())),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, ">", format!("'{}'", v))),
+                FilterColumn::Bool(c, v) => {
+                    Ok(Filtering::sql_str_i(cs, c, ">", format!("'{}'", v)))
+                }
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator GreaterThan",
@@ -495,7 +497,9 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, ">=", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, ">=", v.to_string())),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, ">=", format!("'{}'", v))),
+                FilterColumn::Bool(c, v) => {
+                    Ok(Filtering::sql_str_i(cs, c, ">=", format!("'{}'", v)))
+                }
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator GreaterThanOrEqual",
@@ -506,7 +510,9 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "<", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<", v.to_string())),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "<", format!("'{}'", v))),
+                FilterColumn::Bool(c, v) => {
+                    Ok(Filtering::sql_str_i(cs, c, "<", format!("'{}'", v)))
+                }
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator LessThan",
@@ -517,7 +523,9 @@ impl Filtering {
                 FilterColumn::String(c, v) => Ok(Filtering::sql_str_i(cs, c, "<=", v.to_string())),
                 FilterColumn::Int(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
                 FilterColumn::Float(c, v) => Ok(Filtering::sql_str(c, "<=", v.to_string())),
-                FilterColumn::Bool(c, v) => Ok(Filtering::sql_str_i(cs, c, "<=", format!("'{}'", v))),
+                FilterColumn::Bool(c, v) => {
+                    Ok(Filtering::sql_str_i(cs, c, "<=", format!("'{}'", v)))
+                }
 
                 _ => Err(eyre::eyre!(
                     "Invalid column type '{}' for filter operator LessThanOrEqual",
