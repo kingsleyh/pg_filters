@@ -121,7 +121,7 @@ impl FilteringRule {
                     .map(|v| v.trim().to_string())
                     .collect::<Vec<String>>();
                 match column {
-                    ColumnName::String(c) => FilterValue::StringList(values),
+                    ColumnName::String(_c) => FilterValue::StringList(values),
                     ColumnName::Int(c) => {
                         let values = values
                             .into_iter()
