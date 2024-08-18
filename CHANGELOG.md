@@ -1,3 +1,21 @@
+## 2024-08-18, Version v0.1.10
+### Commits
+- [[`a5d9c50b7e`](https://github.com/kingsleyh/pg_filters/commit/a5d9c50b7ec655455420714c17d098da1eeee7e7)] bump version (kingsley.hendrickse)
+- [[`fa352cc182`](https://github.com/kingsleyh/pg_filters/commit/fa352cc1825bcb3d5111ef09c170ddda71a43f99)] fix (kingsley.hendrickse)
+- [[`1f45772463`](https://github.com/kingsleyh/pg_filters/commit/1f45772463f6b26fb3bc0cacd6f812c02610e4e3)] fix (kingsley.hendrickse)
+- [[`1f6122e5a5`](https://github.com/kingsleyh/pg_filters/commit/1f6122e5a552a97c3fcd306e1abd3c8d4e64bef8)] relax rules on operator matching (kingsley.hendrickse)
+- [[`98d6c6e1b0`](https://github.com/kingsleyh/pg_filters/commit/98d6c6e1b0ffa9eb5cb8a89fcc2a720d5ed014d6)] changelog (kingsley.hendrickse)
+
+### Stats
+```diff
+ CHANGELOG.md                 | 18 ++++++++++++++++++
+ Cargo.lock                   |  2 +-
+ Cargo.toml                   |  2 +-
+ src/lib/filtering.rs         | 40 ++++++++++++----------------------------
+ tests/unit/filtering_test.rs | 21 +++------------------
+ 5 files changed, 35 insertions(+), 48 deletions(-)
+```
+
 ## 2024-08-18, Version v0.1.9
 ### Commits
 - [[`70317c8b44`](https://github.com/kingsleyh/pg_filters/commit/70317c8b44af70e0dfd9af9dc45065bef3c52181)] 0.1.9 (kingsley.hendrickse)
