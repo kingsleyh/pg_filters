@@ -1,3 +1,20 @@
+## 2024-08-18, Version v0.1.8
+### Commits
+- [[`4643f01126`](https://github.com/kingsleyh/pg_filters/commit/4643f01126528f61f815ca90123aaad5aee2d743)] fix (kingsley.hendrickse)
+- [[`f33cb00c40`](https://github.com/kingsleyh/pg_filters/commit/f33cb00c40ea67493af55acbac7af4a8b9b4d4c8)] update (kingsley.hendrickse)
+- [[`e605c1b253`](https://github.com/kingsleyh/pg_filters/commit/e605c1b2535b9483f97583bdba00cc9843f565bb)] fix (kingsley.hendrickse)
+- [[`c1e5693bca`](https://github.com/kingsleyh/pg_filters/commit/c1e5693bca3cfdd7cd7f78cee9f81909c2db0b48)] bump version (kingsley.hendrickse)
+- [[`001bc1f0fd`](https://github.com/kingsleyh/pg_filters/commit/001bc1f0fde7d2d7f2a4faf4a1c8be317af4c1fb)] attempt to convert value for filter rule into the desired type (kingsley.hendrickse)
+
+### Stats
+```diff
+ Cargo.lock                   |   2 +-
+ Cargo.toml                   |   2 +-
+ src/lib/filtering.rs         | 105 +++++++++++++++++++++++++++++---------------
+ tests/unit/filtering_test.rs |  78 ++++++++++++++++++++++-----------
+ 4 files changed, 124 insertions(+), 63 deletions(-)
+```
+
 ## 2024-08-10, Version v0.1.7
 ### Commits
 - [[`2a89a3ed24`](https://github.com/kingsleyh/pg_filters/commit/2a89a3ed242e82caf56f7ace3b7fc4c4d6aae16d)] 0.1.7 (kingsley.hendrickse)
