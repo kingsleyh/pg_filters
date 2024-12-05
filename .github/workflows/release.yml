@@ -2,11 +2,12 @@ name: Publish release to Crates.io
 
 concurrency:
   group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 on:
   push:
     tags:
-      - '*'
+      - 'v*'  # Only match version tags
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,7 +15,6 @@ env:
 jobs:
   build-test:
     name: Build and test (${{ matrix.os }})
-
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -22,56 +22,44 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: swatinem/rust-cache@v2
-      - name: Build
-        run: >
-          cargo build
-          --locked
-          --verbose
-
-      - name: Run tests (without coverage)
-        if: matrix.os != 'ubuntu-latest'
-        run: >
-          cargo test
-          --verbose
-
-  release-please:
-    name: Execute release chores
-
-    permissions:
-      contents: write
-      pull-requests: write
-
-    runs-on: ubuntu-latest
-    needs: build-test
-
-    outputs:
-      created: ${{ steps.release.outputs.release_created }}
-
-    steps:
-      - uses: google-github-actions/release-please-action@v3
-        id: release
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
-          release-type: rust
+          shared-key: "build-cache"
+
+      - name: Build
+        run: cargo build --locked --verbose
+
+      - name: Run tests
+        run: cargo test --verbose
 
   publish:
     name: Publish to crates.io
-
+    needs: build-test
     runs-on: ubuntu-latest
-    needs: release-please
-    if: needs.release-please.outputs.created
-
     environment: crates.io
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: swatinem/rust-cache@v2
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "publish-cache"
 
-      - name: Publish
-        # https://doc.rust-lang.org/cargo/reference/config.html?highlight=CARGO_REGISTRY_TOKEN#credentials
-        run: >
-          cargo publish
-          --verbose
-          --locked
-          --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.get_version.outputs.VERSION }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to crates.io
+        run: cargo publish --locked --verbose --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
