@@ -6,13 +6,31 @@
 [![Coverage Status](https://coveralls.io/repos/github/kingsleyh/pg_filters/badge.svg?branch=main)](https://coveralls.io/github/kingsleyh/pg_filters?branch=main)
 [![Crates](https://img.shields.io/crates/v/pg_filters.svg)](https://crates.io/crates/pg_filters)
 
-A simple rust helper to generate postgres sql for pagination, sorting and filtering
+A powerful Rust helper to generate PostgreSQL SQL for pagination, sorting, and advanced filtering with support for complex AND/OR conditions.
 
 ## Usage
 
+### Simple Filtering
+
+Basic filtering with multiple AND conditions:
+
 ```rust
 use pg_filters::{PgFilters, PaginationOptions, FilteringOptions, ColumnDef};
-use pg_filters::sorting::{SortedColumn, SortOrder};
+use pg_filters::filtering::{FilterCondition, FilterExpression, FilterOperator};
+use pg_filters::sorting::SortedColumn;
+
+// Create simple conditions
+let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
+    column: "name".to_string(),
+    operator: FilterOperator::Equal,
+    value: Some("John".to_string()),
+});
+
+let age_condition = FilterExpression::Condition(FilterCondition::IntegerValue {
+    column: "age".to_string(),
+    operator: FilterOperator::GreaterThan,
+    value: Some(18),
+});
 
 let filters = PgFilters::new(
     Some(PaginationOptions {
@@ -22,33 +40,122 @@ let filters = PgFilters::new(
         total_records: 1000,
     }),
     vec![
-        SortedColumn {
-            column: "age".to_string(),
-            order: SortOrder::Desc,
-        },
-        SortedColumn {
-            column: "name".to_string(),
-            order: SortOrder::Asc,
-        },
+        SortedColumn::new("age", "desc"),
+        SortedColumn::new("name", "asc"),
     ],
-    Some(FilteringOptions::new(vec![
-        (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-        (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
-    ])),
+    Some(FilteringOptions::new(vec![name_condition, age_condition])),
 )?;
 
 let sql = filters.sql()?;
-assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') AND age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
+// Results in: WHERE (LOWER(name) = LOWER('John') AND age > 18) ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0
 ```
 
-If you need to apply the filtering rules for pagination you can get the sql for that from the filter options:
+### Complex Filtering
+
+Example with complex AND/OR conditions:
 
 ```rust
-let filtering_options = FilteringOptions::new(vec![
-    (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-]);
+use pg_filters::filtering::{FilterExpression, LogicalOperator};
 
-let pagination_options = if filtering_options.columns.is_empty() {
+// Create individual conditions
+let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
+    column: "name".to_string(),
+    operator: FilterOperator::Equal,
+    value: Some("John".to_string()),
+});
+
+let age_condition = FilterExpression::Condition(FilterCondition::IntegerValue {
+    column: "age".to_string(),
+    operator: FilterOperator::GreaterThan,
+    value: Some(18),
+});
+
+let city_condition = FilterExpression::Condition(FilterCondition::InValues {
+    column: "city".to_string(),
+    operator: FilterOperator::In,
+    values: vec!["New York".to_string(), "London".to_string()],
+});
+
+// Create a complex filter: (name = 'John' AND age > 18) OR city IN ('New York', 'London')
+let filter_group = FilterExpression::Group {
+    operator: LogicalOperator::Or,
+    expressions: vec![
+        FilterExpression::Group {
+            operator: LogicalOperator::And,
+            expressions: vec![name_condition, age_condition],
+        },
+        city_condition,
+    ],
+};
+
+let filters = PgFilters::new(
+    Some(PaginationOptions {
+        current_page: 1,
+        per_page: 10,
+        per_page_limit: 10,
+        total_records: 1000,
+    }),
+    vec![SortedColumn::new("name", "asc")],
+    Some(FilteringOptions::new(vec![filter_group])),
+)?;
+
+let sql = filters.sql()?;
+// Results in: WHERE ((LOWER(name) = LOWER('John') AND age > 18) OR city IN ('New York', 'London')) ORDER BY name ASC LIMIT 10 OFFSET 0
+```
+
+### Nested Complex Conditions
+
+Example with multiple levels of nesting:
+
+```rust
+// Create a filter: (name = 'John' AND age > 18) OR (name = 'Jane' AND age < 25)
+let filters = FilteringOptions::new(vec![
+    FilterExpression::Group {
+        operator: LogicalOperator::Or,
+        expressions: vec![
+            FilterExpression::Group {
+                operator: LogicalOperator::And,
+                expressions: vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::Equal,
+                        value: Some("John".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::IntegerValue {
+                        column: "age".to_string(),
+                        operator: FilterOperator::GreaterThan,
+                        value: Some(18),
+                    }),
+                ],
+            },
+            FilterExpression::Group {
+                operator: LogicalOperator::And,
+                expressions: vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::Equal,
+                        value: Some("Jane".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::IntegerValue {
+                        column: "age".to_string(),
+                        operator: FilterOperator::LessThan,
+                        value: Some(25),
+                    }),
+                ],
+            },
+        ],
+    }
+]);
+```
+
+### Pagination with Filtered Count
+
+When you need to apply filtering rules for pagination:
+
+```rust
+let filtering_options = FilteringOptions::new(vec![filter_expression]);
+
+let pagination_options = if filtering_options.expressions.is_empty() {
     let total_rows = db.query_one(total_rows_select_statement.as_str(), &[])
         .await
         .map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
@@ -93,8 +200,9 @@ let pagination_options = if filtering_options.columns.is_empty() {
 * TimestampTz - TIMESTAMP WITH TIME ZONE columns
 * Uuid - UUID columns
 * Json/Jsonb - JSON and JSONB columns
+* And many more (see documentation for full list)
 
-## Valid Filtering Options
+## Valid Filtering Operators
 
 The filtering supports various operators for different column types:
 
@@ -122,9 +230,7 @@ Can be upper or lower case:
 By default, text searches are case-insensitive. You can make them case-sensitive using:
 
 ```rust
-FilteringOptions::case_sensitive(vec![
-    (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-]);
+FilteringOptions::case_sensitive(vec![filter_expression]);
 ```
 
 ## Pagination Details

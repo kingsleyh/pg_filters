@@ -1,4 +1,4 @@
-use crate::filtering::{FilterBuilder, FilterCondition, FilterOperator};
+use crate::filtering::{FilterBuilder, FilterCondition, FilterExpression, FilterOperator, LogicalOperator};
 use crate::pagination::Paginate;
 use crate::sorting::{SortedColumn, Sorting};
 use eyre::Result;
@@ -239,7 +239,18 @@ impl ColumnDef {
             }),
 
             // Money Type
-            ColumnDef::Money(name) | ColumnDef::Xml(name) => Ok(FilterCondition::TextValue {
+            ColumnDef::Money(name) => Ok(FilterCondition::TextValue {
+                column: name.to_string(),
+                operator: op,
+                value: if operator == "IS NULL" || operator == "IS NOT NULL" {
+                    None
+                } else {
+                    Some(value.to_string())
+                },
+            }),
+
+            // XML Type
+            ColumnDef::Xml(name) => Ok(FilterCondition::TextValue {
                 column: name.to_string(),
                 operator: op,
                 value: if operator == "IS NULL" || operator == "IS NOT NULL" {
@@ -251,7 +262,6 @@ impl ColumnDef {
         }
     }
 
-    // Helper method to get the column name
     fn get_column_name(&self) -> String {
         match self {
             ColumnDef::Text(name)
@@ -305,31 +315,33 @@ impl PaginationOptions {
 
 #[derive(Clone)]
 pub struct FilteringOptions {
-    pub columns: Vec<(ColumnDef, String, String)>,
+    pub expressions: Vec<FilterExpression>,
     pub case_insensitive: bool,
 }
 
 impl FilteringOptions {
-    pub fn new(columns: Vec<(ColumnDef, String, String)>) -> Self {
+    pub fn new(expressions: Vec<FilterExpression>) -> Self {
         Self {
-            columns,
+            expressions,
             case_insensitive: true,
         }
     }
 
-    pub fn case_sensitive(columns: Vec<(ColumnDef, String, String)>) -> Self {
+    pub fn case_sensitive(expressions: Vec<FilterExpression>) -> Self {
         Self {
-            columns,
+            expressions,
             case_insensitive: false,
         }
     }
 
-    fn to_filter_builder(&self) -> eyre::Result<FilterBuilder> {
+    fn to_filter_builder(&self) -> Result<FilterBuilder> {
         let mut builder = FilterBuilder::new().case_insensitive(self.case_insensitive);
 
-        for (column, operator, value) in &self.columns {
-            let condition = column.to_filter_condition(operator, value)?;
-            builder = builder.add_condition(condition);
+        // If there are multiple expressions, wrap them in a group with AND operator
+        if self.expressions.len() > 1 {
+            builder = builder.group(LogicalOperator::And, self.expressions.clone());
+        } else if let Some(expr) = self.expressions.first() {
+            builder = builder.add_expression(expr.clone());
         }
 
         Ok(builder)
@@ -348,7 +360,7 @@ impl PgFilters {
         pagination: Option<PaginationOptions>,
         sorting_columns: Vec<SortedColumn>,
         filtering_options: Option<FilteringOptions>,
-    ) -> eyre::Result<PgFilters> {
+    ) -> Result<PgFilters> {
         let pagination = pagination.map(|pagination| {
             Paginate::new(
                 pagination.current_page,
@@ -373,7 +385,7 @@ impl PgFilters {
         })
     }
 
-    pub fn sql(&self) -> eyre::Result<String> {
+    pub fn sql(&self) -> Result<String> {
         let mut sql = String::new();
 
         if let Some(filters) = &self.filters {
@@ -396,10 +408,40 @@ impl PgFilters {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::sorting::SortedColumn;
 
     #[test]
-    fn test_pg_filters() -> eyre::Result<()> {
+    fn test_pg_filters_with_complex_conditions() -> Result<()> {
+        // Create test conditions
+        let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
+            column: "name".to_string(),
+            operator: FilterOperator::Equal,
+            value: Some("John".to_string()),
+        });
+
+        let age_condition = FilterExpression::Condition(FilterCondition::IntegerValue {
+            column: "age".to_string(),
+            operator: FilterOperator::GreaterThan,
+            value: Some(18),
+        });
+
+        let city_condition = FilterExpression::Condition(FilterCondition::InValues {
+            column: "city".to_string(),
+            operator: FilterOperator::In,
+            values: vec!["New York".to_string(), "London".to_string()],
+        });
+
+        // Create a complex filter group: (name = 'John' AND age > 18) OR city IN ('New York', 'London')
+        let filter_group = FilterExpression::Group {
+            operator: LogicalOperator::Or,
+            expressions: vec![
+                FilterExpression::Group {
+                    operator: LogicalOperator::And,
+                    expressions: vec![name_condition, age_condition],
+                },
+                city_condition,
+            ],
+        };
+
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -411,17 +453,85 @@ mod tests {
                 SortedColumn::new("age", "desc"),
                 SortedColumn::new("name", "asc"),
             ],
-            Some(FilteringOptions::new(vec![
-                (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-                (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
-            ])),
+            Some(FilteringOptions::new(vec![filter_group])),
         )?;
 
         let sql = filters.sql()?;
         assert_eq!(
             sql,
-            " WHERE LOWER(name) = LOWER('John') AND age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
+            " WHERE ((LOWER(name) = LOWER('John') AND age > 18) OR city IN ('New York', 'London')) ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_column_def_to_filter_condition() -> Result<()> {
+        // Test text column
+        let text_condition = ColumnDef::Text("name")
+            .to_filter_condition("=", "John")?
+            .to_sql(true)?;
+        assert_eq!(text_condition, "LOWER(name) = LOWER('John')");
+
+        // Test integer column
+        let int_condition = ColumnDef::Integer("age")
+            .to_filter_condition(">", "18")?
+            .to_sql(true)?;
+        assert_eq!(int_condition, "age > 18");
+
+        // Test IN condition
+        let in_condition = ColumnDef::Text("city")
+            .to_filter_condition("IN", "New York,London")?
+            .to_sql(true)?;
+        assert_eq!(in_condition, "city IN ('New York', 'London')");
+
+        // Test NULL condition
+        let null_condition = ColumnDef::Text("description")
+            .to_filter_condition("IS NULL", "")?
+            .to_sql(true)?;
+        assert_eq!(null_condition, "description IS NULL");
+
+        // Test LIKE condition
+        let like_condition = ColumnDef::Text("name")
+            .to_filter_condition("STARTS WITH", "Jo")?
+            .to_sql(true)?;
+        assert_eq!(like_condition, "LOWER(name) LIKE LOWER('Jo%')");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pg_filters_without_conditions() -> Result<()> {
+        let filters = PgFilters::new(
+            Some(PaginationOptions {
+                current_page: 1,
+                per_page: 10,
+                per_page_limit: 10,
+                total_records: 1000,
+            }),
+            vec![SortedColumn::new("name", "asc")],
+            None,
+        )?;
+
+        let sql = filters.sql()?;
+        assert_eq!(sql, " ORDER BY name ASC LIMIT 10 OFFSET 0");
+        Ok(())
+    }
+
+    #[test]
+    fn test_pg_filters_with_only_pagination() -> Result<()> {
+        let filters = PgFilters::new(
+            Some(PaginationOptions {
+                current_page: 2,
+                per_page: 15,
+                per_page_limit: 20,
+                total_records: 1000,
+            }),
+            vec![],
+            None,
+        )?;
+
+        let sql = filters.sql()?;
+        assert_eq!(sql, " LIMIT 15 OFFSET 15");
         Ok(())
     }
 }

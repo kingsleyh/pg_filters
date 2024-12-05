@@ -1,8 +1,9 @@
 use crate::integration::run_with_container;
 use chrono::NaiveDateTime;
 use pg_filters::{
-    sorting::{SortOrder, SortedColumn},
-    ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
+    filtering::{FilterCondition, FilterExpression, FilterOperator},
+    sorting::{SortOrder, SortedColumn}
+    , FilteringOptions, PaginationOptions, PgFilters,
 };
 use uuid::Uuid;
 
@@ -27,28 +28,30 @@ async fn test_logical_filters() {
                 },
             ],
             Some(FilteringOptions::new(vec![
-                // Less restrictive filters for logical results
-                (
-                    ColumnDef::Text("name"),
-                    "LIKE".to_string(),
-                    "%name1%".to_string(),
-                ),
-                (ColumnDef::Integer("age"), ">".to_string(), "10".to_string()),
-                (
-                    ColumnDef::DoublePrecision("capacity"),
-                    "<=".to_string(),
-                    "15.0".to_string(),
-                ),
-                (
-                    ColumnDef::Boolean("active"),
-                    "=".to_string(),
-                    "true".to_string(),
-                ),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Like,
+                    value: Some("%name1%".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(10),
+                }),
+                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                    column: "capacity".to_string(),
+                    operator: FilterOperator::LessThanOrEqual,
+                    value: Some(15.0),
+                }),
+                FilterExpression::Condition(FilterCondition::BooleanValue {
+                    column: "active".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some(true),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
-        // Generate SQL and execute query
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
 
@@ -56,7 +59,6 @@ async fn test_logical_filters() {
         let client = pool.get().await.unwrap();
         let rows = client.query(query.as_str(), &[]).await.unwrap();
 
-        // Map results
         let rows: Vec<(String, i32)> = rows
             .iter()
             .map(|row| {
@@ -66,13 +68,11 @@ async fn test_logical_filters() {
             })
             .collect();
 
-        // Adjust expectations to match the updated data
         let expected_rows = vec![("name14".to_string(), 14), ("name12".to_string(), 12)];
 
-        // Assert results
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -90,20 +90,22 @@ async fn test_date_and_uuid() {
                 order: SortOrder::Asc,
             }],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Timestamp("registration"),
-                    ">=".to_string(),
-                    "2023-10-10 12:00:00".to_string(),
-                ),
-                (
-                    ColumnDef::Uuid("uuid"),
-                    "IN".to_string(),
-                    "550e8400-e29b-41d4-a716-446655440001,550e8400-e29b-41d4-a716-446655440003"
-                        .to_string(),
-                ),
+                FilterExpression::Condition(FilterCondition::TimestampValue {
+                    column: "registration".to_string(),
+                    operator: FilterOperator::GreaterThanOrEqual,
+                    value: Some("2023-10-10 12:00:00".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::InValues {
+                    column: "uuid".to_string(),
+                    operator: FilterOperator::In,
+                    values: vec![
+                        "550e8400-e29b-41d4-a716-446655440001".to_string(),
+                        "550e8400-e29b-41d4-a716-446655440003".to_string(),
+                    ],
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -137,7 +139,7 @@ async fn test_date_and_uuid() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -155,19 +157,19 @@ async fn test_boolean_and_capacity() {
                 order: SortOrder::Desc,
             }],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Boolean("active"),
-                    "=".to_string(),
-                    "true".to_string(),
-                ),
-                (
-                    ColumnDef::DoublePrecision("capacity"),
-                    "<=".to_string(),
-                    "10.0".to_string(),
-                ),
+                FilterExpression::Condition(FilterCondition::BooleanValue {
+                    column: "active".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some(true),
+                }),
+                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                    column: "capacity".to_string(),
+                    operator: FilterOperator::LessThanOrEqual,
+                    value: Some(10.0),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -197,7 +199,7 @@ async fn test_boolean_and_capacity() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -221,15 +223,19 @@ async fn test_name_and_age() {
                 },
             ],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Text("name"),
-                    "LIKE".to_string(),
-                    "%name%".to_string(),
-                ),
-                (ColumnDef::Integer("age"), ">".to_string(), "5".to_string()),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Like,
+                    value: Some("%name%".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(5),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -262,7 +268,7 @@ async fn test_name_and_age() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -286,15 +292,19 @@ async fn test_string_int() {
                 },
             ],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Text("name"),
-                    "LIKE".to_string(),
-                    "%name1%".to_string(),
-                ),
-                (ColumnDef::Integer("age"), ">".to_string(), "10".to_string()),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Like,
+                    value: Some("%name1%".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(10),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -312,7 +322,6 @@ async fn test_string_int() {
             })
             .collect();
 
-        // Only expecting entries where name contains "name1" and age > 10
         let expected_rows = vec![
             ("name19".to_string(), 19),
             ("name18".to_string(), 18),
@@ -327,7 +336,7 @@ async fn test_string_int() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -351,24 +360,24 @@ async fn test_float_bool() {
                 },
             ],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Boolean("active"),
-                    "=".to_string(),
-                    "true".to_string(),
-                ),
-                (
-                    ColumnDef::DoublePrecision("capacity"),
-                    ">".to_string(),
-                    "2".to_string(),
-                ),
-                (
-                    ColumnDef::DoublePrecision("capacity"),
-                    "<".to_string(),
-                    "6".to_string(),
-                ),
+                FilterExpression::Condition(FilterCondition::BooleanValue {
+                    column: "active".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some(true),
+                }),
+                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                    column: "capacity".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(2.0),
+                }),
+                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                    column: "capacity".to_string(),
+                    operator: FilterOperator::LessThan,
+                    value: Some(6.0),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -387,18 +396,16 @@ async fn test_float_bool() {
             })
             .collect();
 
-        // Expecting entries with even index (active=true) and capacity between 2 and 6
         let expected_rows = vec![("name4".to_string(), 4.0, true)];
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_in() {
     run_with_container(|pool| async move {
-        // Use `FilteringOptions` with a comma-separated string for `IN` values
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -416,13 +423,15 @@ async fn test_in() {
                     order: SortOrder::Asc,
                 },
             ],
-            Some(FilteringOptions::new(vec![(
-                ColumnDef::Integer("age"),
-                "IN".to_string(),
-                "11,12,13".to_string(),
+            Some(FilteringOptions::new(vec![FilterExpression::Condition(
+                FilterCondition::InValues {
+                    column: "age".to_string(),
+                    operator: FilterOperator::In,
+                    values: vec!["11".to_string(), "12".to_string(), "13".to_string()],
+                },
             )])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -448,7 +457,7 @@ async fn test_in() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -472,19 +481,19 @@ async fn test_starts_with() {
                 },
             ],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Text("name"),
-                    "STARTS WITH".to_string(),
-                    "name1".to_string(),
-                ),
-                (
-                    ColumnDef::Integer("age"),
-                    ">=".to_string(),
-                    "17".to_string(),
-                ),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::StartsWith,
+                    value: Some("name1".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThanOrEqual,
+                    value: Some(17),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -510,7 +519,7 @@ async fn test_starts_with() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
@@ -528,19 +537,19 @@ async fn test_text_search() {
                 order: SortOrder::Asc,
             }],
             Some(FilteringOptions::new(vec![
-                (
-                    ColumnDef::Text("name"),
-                    "LIKE".to_string(),
-                    "%name%".to_string(),
-                ),
-                (
-                    ColumnDef::Text("nickname"),
-                    "LIKE".to_string(),
-                    "%nickname1%".to_string(),
-                ),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Like,
+                    value: Some("%name%".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "nickname".to_string(),
+                    operator: FilterOperator::Like,
+                    value: Some("%nickname1%".to_string()),
+                }),
             ])),
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -558,7 +567,6 @@ async fn test_text_search() {
             })
             .collect();
 
-        // Expecting entries where both name contains "name" and nickname contains "nickname1"
         let expected_rows = vec![
             ("name1".to_string(), "nickname1".to_string()),
             ("name10".to_string(), "nickname10".to_string()),
@@ -569,5 +577,5 @@ async fn test_text_search() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }

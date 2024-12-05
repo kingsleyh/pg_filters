@@ -17,7 +17,7 @@ fn test_filtering() -> Result<()> {
         })
         .build()?;
 
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') AND age > 18");
+    assert_eq!(sql, " WHERE (LOWER(name) = LOWER('John') AND age > 18)");
     Ok(())
 }
 
@@ -37,7 +37,7 @@ fn test_filtering_case_sensitive() -> Result<()> {
         })
         .build()?;
 
-    assert_eq!(sql, " WHERE name = 'John' AND age > 18");
+    assert_eq!(sql, " WHERE (name = 'John' AND age > 18)");
     Ok(())
 }
 
@@ -59,7 +59,7 @@ fn test_filtering_with_bool() -> Result<()> {
 
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND completed = true"
+        " WHERE (LOWER(name) = LOWER('John') AND completed = true)"
     );
     Ok(())
 }
@@ -80,7 +80,7 @@ fn test_filtering_with_float() -> Result<()> {
         })
         .build()?;
 
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') AND value <= 1.1");
+    assert_eq!(sql, " WHERE (LOWER(name) = LOWER('John') AND value <= 1.1)");
     Ok(())
 }
 
@@ -102,7 +102,7 @@ fn test_filtering_with_duplicate_columns() -> Result<()> {
 
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND LOWER(name) = LOWER('Doe')"
+        " WHERE (LOWER(name) = LOWER('John') AND LOWER(name) = LOWER('Doe'))"
     );
     Ok(())
 }
@@ -326,7 +326,7 @@ fn test_filtering_with_multiple_complex_conditions() -> Result<()> {
 
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND age > 18 AND LOWER(city) LIKE LOWER('%New York%')"
+        " WHERE ((LOWER(name) = LOWER('John') AND age > 18) AND LOWER(city) LIKE LOWER('%New York%'))"
     );
     Ok(())
 }
@@ -359,7 +359,7 @@ fn test_filtering_with_type_casting() -> Result<()> {
 
     assert_eq!(
         sql,
-        " WHERE LOWER(name) LIKE LOWER('%John%') AND code = 12 AND price = 10.4 AND active = true"
+        " WHERE (((LOWER(name) LIKE LOWER('%John%') AND code = 12) AND price = 10.4) AND active = true)"
     );
     Ok(())
 }

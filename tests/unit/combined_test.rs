@@ -1,7 +1,8 @@
 use eyre::Result;
 use pg_filters::{
-    sorting::{SortOrder, SortedColumn},
-    ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
+    filtering::{FilterCondition, FilterExpression, FilterOperator, LogicalOperator},
+    sorting::{SortOrder, SortedColumn}
+    , FilteringOptions, PaginationOptions, PgFilters,
 };
 
 #[test]
@@ -18,15 +19,23 @@ fn test_filtering_with_sorting_with_pagination() -> Result<()> {
             order: SortOrder::Asc,
         }],
         Some(FilteringOptions::new(vec![
-            (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-            (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "name".to_string(),
+                operator: FilterOperator::Equal,
+                value: Some("John".to_string()),
+            }),
+            FilterExpression::Condition(FilterCondition::IntegerValue {
+                column: "age".to_string(),
+                operator: FilterOperator::GreaterThan,
+                value: Some(18),
+            }),
         ])),
     )?;
 
     let sql = filters.sql()?;
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0"
+        " WHERE (LOWER(name) = LOWER('John') AND age > 18) ORDER BY name ASC LIMIT 10 OFFSET 0"
     );
     Ok(())
 }
@@ -45,15 +54,23 @@ fn test_filtering_with_case_sensitive() -> Result<()> {
             order: SortOrder::Asc,
         }],
         Some(FilteringOptions::case_sensitive(vec![
-            (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-            (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "name".to_string(),
+                operator: FilterOperator::Equal,
+                value: Some("John".to_string()),
+            }),
+            FilterExpression::Condition(FilterCondition::IntegerValue {
+                column: "age".to_string(),
+                operator: FilterOperator::GreaterThan,
+                value: Some(18),
+            }),
         ])),
     )?;
 
     let sql = filters.sql()?;
     assert_eq!(
         sql,
-        " WHERE name = 'John' AND age > 18 ORDER BY name ASC LIMIT 10 OFFSET 0"
+        " WHERE (name = 'John' AND age > 18) ORDER BY name ASC LIMIT 10 OFFSET 0"
     );
     Ok(())
 }
@@ -69,15 +86,23 @@ fn test_filtering_without_sorting_with_pagination() -> Result<()> {
         }),
         vec![],
         Some(FilteringOptions::new(vec![
-            (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-            (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "name".to_string(),
+                operator: FilterOperator::Equal,
+                value: Some("John".to_string()),
+            }),
+            FilterExpression::Condition(FilterCondition::IntegerValue {
+                column: "age".to_string(),
+                operator: FilterOperator::GreaterThan,
+                value: Some(18),
+            }),
         ])),
     )?;
 
     let sql = filters.sql()?;
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND age > 18 LIMIT 10 OFFSET 0"
+        " WHERE (LOWER(name) = LOWER('John') AND age > 18) LIMIT 10 OFFSET 0"
     );
     Ok(())
 }
@@ -91,15 +116,23 @@ fn test_filtering_with_sorting_without_pagination() -> Result<()> {
             order: SortOrder::Asc,
         }],
         Some(FilteringOptions::new(vec![
-            (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-            (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "name".to_string(),
+                operator: FilterOperator::Equal,
+                value: Some("John".to_string()),
+            }),
+            FilterExpression::Condition(FilterCondition::IntegerValue {
+                column: "age".to_string(),
+                operator: FilterOperator::GreaterThan,
+                value: Some(18),
+            }),
         ])),
     )?;
 
     let sql = filters.sql()?;
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND age > 18 ORDER BY name ASC"
+        " WHERE (LOWER(name) = LOWER('John') AND age > 18) ORDER BY name ASC"
     );
     Ok(())
 }
@@ -110,13 +143,21 @@ fn test_filtering_without_sorting_without_pagination() -> Result<()> {
         None,
         vec![],
         Some(FilteringOptions::new(vec![
-            (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-            (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "name".to_string(),
+                operator: FilterOperator::Equal,
+                value: Some("John".to_string()),
+            }),
+            FilterExpression::Condition(FilterCondition::IntegerValue {
+                column: "age".to_string(),
+                operator: FilterOperator::GreaterThan,
+                value: Some(18),
+            }),
         ])),
     )?;
 
     let sql = filters.sql()?;
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') AND age > 18");
+    assert_eq!(sql, " WHERE (LOWER(name) = LOWER('John') AND age > 18)");
     Ok(())
 }
 
@@ -204,20 +245,78 @@ fn test_with_many_filters_and_many_sorting_and_pagination() -> Result<()> {
             },
         ],
         Some(FilteringOptions::new(vec![
-            (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
-            (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
-            (
-                ColumnDef::Text("email"),
-                "LIKE".to_string(),
-                "%gmail.com%".to_string(),
-            ),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "name".to_string(),
+                operator: FilterOperator::Equal,
+                value: Some("John".to_string()),
+            }),
+            FilterExpression::Condition(FilterCondition::IntegerValue {
+                column: "age".to_string(),
+                operator: FilterOperator::GreaterThan,
+                value: Some(18),
+            }),
+            FilterExpression::Condition(FilterCondition::TextValue {
+                column: "email".to_string(),
+                operator: FilterOperator::Like,
+                value: Some("%gmail.com%".to_string()),
+            }),
         ])),
     )?;
 
     let sql = filters.sql()?;
     assert_eq!(
         sql,
-        " WHERE LOWER(name) = LOWER('John') AND age > 18 AND LOWER(email) LIKE LOWER('%gmail.com%') ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
+        " WHERE (LOWER(name) = LOWER('John') AND age > 18 AND LOWER(email) LIKE LOWER('%gmail.com%')) ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_complex_filtering_with_and_or_conditions() -> Result<()> {
+    let filters = PgFilters::new(
+        Some(PaginationOptions {
+            current_page: 1,
+            per_page: 10,
+            per_page_limit: 10,
+            total_records: 1000,
+        }),
+        vec![SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        }],
+        Some(FilteringOptions::new(vec![
+            FilterExpression::Group {
+                operator: LogicalOperator::Or,
+                expressions: vec![
+                    FilterExpression::Group {
+                        operator: LogicalOperator::And,
+                        expressions: vec![
+                            FilterExpression::Condition(FilterCondition::TextValue {
+                                column: "name".to_string(),
+                                operator: FilterOperator::Equal,
+                                value: Some("John".to_string()),
+                            }),
+                            FilterExpression::Condition(FilterCondition::IntegerValue {
+                                column: "age".to_string(),
+                                operator: FilterOperator::GreaterThan,
+                                value: Some(18),
+                            }),
+                        ],
+                    },
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "city".to_string(),
+                        operator: FilterOperator::In,
+                        value: Some("New York,London".to_string()),
+                    }),
+                ],
+            }
+        ])),
+    )?;
+
+    let sql = filters.sql()?;
+    assert_eq!(
+        sql,
+        " WHERE ((LOWER(name) = LOWER('John') AND age > 18) OR LOWER(city) IN LOWER('New York,London')) ORDER BY name ASC LIMIT 10 OFFSET 0"
     );
     Ok(())
 }
