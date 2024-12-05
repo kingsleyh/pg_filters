@@ -1,9 +1,9 @@
 use eyre::Result;
-use crate::filters::filter::{FilterBuilder, FilterCondition, FilterOperator};
+use crate::filtering::{FilterBuilder, FilterCondition, FilterOperator};
 use crate::pagination::Paginate;
 use crate::sorting::{SortedColumn, Sorting};
 
-pub mod filters;
+pub mod filtering;
 pub mod pagination;
 pub mod sorting;
 

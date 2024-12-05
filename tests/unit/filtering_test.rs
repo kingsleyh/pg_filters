@@ -1,5 +1,5 @@
 use eyre::Result;
-use pg_filters::filters::filter::{FilterBuilder, FilterCondition, FilterOperator};
+use pg_filters::filtering::{FilterBuilder, FilterCondition, FilterOperator};
 
 #[test]
 fn test_filtering() -> Result<()> {
