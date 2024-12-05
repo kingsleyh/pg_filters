@@ -11,72 +11,96 @@ A simple rust helper to generate postgres sql for pagination, sorting and filter
 ## Usage
 
 ```rust
-    let filters = PgFilters::new(
-        Some(PaginationOptions {
-            current_page: 1,
-            per_page: 10,
-            per_page_limit: 10,
-            total_records: 1000,
-        }),
-        vec![
-            SortedColumn::new("age", "desc"),
-            SortedColumn::new("name", "asc"),
-        ],
-        vec![
-            FilteringRule::new("where", ColumnName::String("name"), "=", "John"),
-            FilteringRule::new("or",    ColumnName::Int("age"),     ">", "18"),
-        ],
-    );
+use pg_filters::{PgFilters, PaginationOptions, FilteringOptions, ColumnDef};
+use pg_filters::sorting::{SortedColumn, SortOrder};
 
-    let sql = filters.sql();
-    assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') OR age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
+let filters = PgFilters::new(
+    Some(PaginationOptions {
+        current_page: 1,
+        per_page: 10,
+        per_page_limit: 10,
+        total_records: 1000,
+    }),
+    vec![
+        SortedColumn {
+            column: "age".to_string(),
+            order: SortOrder::Desc,
+        },
+        SortedColumn {
+            column: "name".to_string(),
+            order: SortOrder::Asc,
+        },
+    ],
+    Some(FilteringOptions::new(vec![
+        (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
+        (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
+    ])),
+)?;
+
+let sql = filters.sql()?;
+assert_eq!(sql, " WHERE LOWER(name) = LOWER('John') AND age > 18 ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0");
 ```
 
-If you need to apply the filtering rules for pagination you can get the sql for that from the filter options
+If you need to apply the filtering rules for pagination you can get the sql for that from the filter options:
 
 ```rust
-let filtering_rules: Vec<eyre::Result<FilteringRule>> = vec![FilteringRule::new("where", ColumnName::String("name"), "=", "John")];
+let filtering_options = FilteringOptions::new(vec![
+    (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
+]);
 
-let pagination_options = if filtering_rules.is_empty() {
-  let total_rows = db.query_one(total_rows_select_statement.as_str(), &[]).await.map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
-  let total_records = total_rows.get::<usize, i64>(0);
+let pagination_options = if filtering_options.columns.is_empty() {
+    let total_rows = db.query_one(total_rows_select_statement.as_str(), &[])
+        .await
+        .map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
+    let total_records = total_rows.get::<usize, i64>(0);
 
-  PaginationOptions::new(
-    current_page as i64,
-    per_page as i64,
-    50,
-    total_records as i64,
-  )
+    PaginationOptions::new(
+        current_page as i64,
+        per_page as i64,
+        50,
+        total_records as i64,
+    )
 } else {
-  let filtering_options = FilteringOptions::new(filtering_rules);
-  let filtering_sql = filtering_options.filtering.sql;
-  let filtering_sql = format!(
-    "select count(*) from {}", filtering_sql);
+    let builder = filtering_options.to_filter_builder()?;
+    let filtering_sql = builder.build()?;
+    let count_sql = format!("select count(*) from {}", filtering_sql);
 
-  let total_rows = db.query_one(filtering_sql.as_str(), &[]).await.map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
-  let total_records = total_rows.get::<usize, i64>(0);
-  PaginationOptions::new(
-    current_page as i64,
-    per_page as i64,
-    50,
-    total_records as i64,
-  )
-}
+    let total_rows = db.query_one(count_sql.as_str(), &[])
+        .await
+        .map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
+    let total_records = total_rows.get::<usize, i64>(0);
+    
+    PaginationOptions::new(
+        current_page as i64,
+        per_page as i64,
+        50,
+        total_records as i64,
+    )
+};
 ```
 
-## Note
+## Supported Column Types
 
-* filter rules are applied in the order which they are supplied
-* sorting is applied after sorting on column name alphabetically (duplicates are removed)
-* for readability on the first filtering rule you can use `where` - anything other than AND/OR defaults to AND
+* Text - Text/VARCHAR/CHAR columns
+* Integer - INTEGER columns
+* BigInt - BIGINT columns
+* SmallInt - SMALLINT columns
+* Boolean - BOOLEAN columns
+* DoublePrecision - DOUBLE PRECISION columns
+* Real - REAL columns
+* Date - DATE columns
+* Timestamp - TIMESTAMP columns
+* TimestampTz - TIMESTAMP WITH TIME ZONE columns
+* Uuid - UUID columns
+* Json/Jsonb - JSON and JSONB columns
 
 ## Valid Filtering Options
 
-The filtering accepts a filter operator and a conditional operator the valid options are below:
+The filtering supports various operators for different column types:
 
-### Filtering Operator
+### Filtering Operators
 
-can be upper or lower case
+Can be upper or lower case:
 
 * "="
 * "!="
@@ -93,49 +117,40 @@ can be upper or lower case
 * "STARTS WITH"
 * "ENDS WITH"
 
+### Case Sensitivity
 
-### Valid Conditional Filter Values
-
-can be upper or lower case
-
-* "AND"
-* "OR"
-
-## Returned Objects
-
-Along with the sql it also returns objects containing the pagination, sorting and filtering that has been applied e.g :
+By default, text searches are case-insensitive. You can make them case-sensitive using:
 
 ```rust
-  let pagination_sql = filters.pagination.sql
-  let pagination = filters.pagination.pagination
-
-  pub struct Paginate {
-      pub pagination: Pagination,
-      pub sql: String,
-  }
-
-  pub struct Pagination {
-        current_page,
-        previous_page,
-        next_page,
-        total_pages,
-        per_page,
-        total_records,
-  }
+FilteringOptions::case_sensitive(vec![
+    (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
+]);
 ```
 
-see the tests for more examples
+## Pagination Details
 
-# TODO
-* Dates / Timestamps
-* [other Types as listed here](https://docs.rs/tokio-postgres/latest/tokio_postgres/types/trait.ToSql.html)
+The pagination information is returned in the following structure:
 
-# Changelog
+```rust
+pub struct Paginate {
+    pub pagination: Pagination,
+    pub sql: String,
+}
 
-[See the Changelog](https://github.com/kingsleyh/pg_filters/blob/main/CHANGELOG.md)
+pub struct Pagination {
+    current_page: i64,
+    previous_page: i64,
+    next_page: i64,
+    total_pages: i64,
+    per_page: i64,
+    total_records: i64,
+}
+```
+
+See the tests for more examples.
 
 # License
 
 Licensed under either of these:
-- MIT ([https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT)) 
-- Apache-2.0 ([https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)) 
+- MIT ([https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT))
+- Apache-2.0 ([https://www.apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0))
