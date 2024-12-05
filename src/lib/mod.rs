@@ -1,4 +1,6 @@
-use crate::filtering::{FilterBuilder, FilterCondition, FilterExpression, FilterOperator, LogicalOperator};
+use crate::filtering::{
+    FilterBuilder, FilterCondition, FilterExpression, FilterOperator, LogicalOperator,
+};
 use crate::pagination::Paginate;
 use crate::sorting::{SortedColumn, Sorting};
 use eyre::Result;

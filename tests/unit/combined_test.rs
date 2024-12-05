@@ -1,8 +1,8 @@
 use eyre::Result;
 use pg_filters::{
     filtering::{FilterCondition, FilterExpression, FilterOperator, LogicalOperator},
-    sorting::{SortOrder, SortedColumn}
-    , FilteringOptions, PaginationOptions, PgFilters,
+    sorting::{SortOrder, SortedColumn},
+    FilteringOptions, PaginationOptions, PgFilters,
 };
 
 #[test]
@@ -284,33 +284,31 @@ fn test_complex_filtering_with_and_or_conditions() -> Result<()> {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![
-            FilterExpression::Group {
-                operator: LogicalOperator::Or,
-                expressions: vec![
-                    FilterExpression::Group {
-                        operator: LogicalOperator::And,
-                        expressions: vec![
-                            FilterExpression::Condition(FilterCondition::TextValue {
-                                column: "name".to_string(),
-                                operator: FilterOperator::Equal,
-                                value: Some("John".to_string()),
-                            }),
-                            FilterExpression::Condition(FilterCondition::IntegerValue {
-                                column: "age".to_string(),
-                                operator: FilterOperator::GreaterThan,
-                                value: Some(18),
-                            }),
-                        ],
-                    },
-                    FilterExpression::Condition(FilterCondition::TextValue {
-                        column: "city".to_string(),
-                        operator: FilterOperator::In,
-                        value: Some("New York,London".to_string()),
-                    }),
-                ],
-            }
-        ])),
+        Some(FilteringOptions::new(vec![FilterExpression::Group {
+            operator: LogicalOperator::Or,
+            expressions: vec![
+                FilterExpression::Group {
+                    operator: LogicalOperator::And,
+                    expressions: vec![
+                        FilterExpression::Condition(FilterCondition::TextValue {
+                            column: "name".to_string(),
+                            operator: FilterOperator::Equal,
+                            value: Some("John".to_string()),
+                        }),
+                        FilterExpression::Condition(FilterCondition::IntegerValue {
+                            column: "age".to_string(),
+                            operator: FilterOperator::GreaterThan,
+                            value: Some(18),
+                        }),
+                    ],
+                },
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "city".to_string(),
+                    operator: FilterOperator::In,
+                    value: Some("New York,London".to_string()),
+                }),
+            ],
+        }])),
     )?;
 
     let sql = filters.sql()?;

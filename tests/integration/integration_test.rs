@@ -2,8 +2,8 @@ use crate::integration::run_with_container;
 use chrono::NaiveDateTime;
 use pg_filters::{
     filtering::{FilterCondition, FilterExpression, FilterOperator},
-    sorting::{SortOrder, SortedColumn}
-    , FilteringOptions, PaginationOptions, PgFilters,
+    sorting::{SortOrder, SortedColumn},
+    FilteringOptions, PaginationOptions, PgFilters,
 };
 use uuid::Uuid;
 
@@ -50,7 +50,7 @@ async fn test_logical_filters() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -72,7 +72,7 @@ async fn test_logical_filters() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -105,7 +105,7 @@ async fn test_date_and_uuid() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -139,7 +139,7 @@ async fn test_date_and_uuid() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -169,7 +169,7 @@ async fn test_boolean_and_capacity() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -199,7 +199,7 @@ async fn test_boolean_and_capacity() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -235,7 +235,7 @@ async fn test_name_and_age() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -268,7 +268,7 @@ async fn test_name_and_age() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -304,7 +304,7 @@ async fn test_string_int() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -336,7 +336,7 @@ async fn test_string_int() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -377,7 +377,7 @@ async fn test_float_bool() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -400,7 +400,7 @@ async fn test_float_bool() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -431,7 +431,7 @@ async fn test_in() {
                 },
             )])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -457,7 +457,7 @@ async fn test_in() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -493,7 +493,7 @@ async fn test_starts_with() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -519,7 +519,7 @@ async fn test_starts_with() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -549,7 +549,7 @@ async fn test_text_search() {
                 }),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -577,5 +577,5 @@ async fn test_text_search() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
