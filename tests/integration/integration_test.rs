@@ -1,10 +1,10 @@
-use chrono::NaiveDateTime;
-use uuid::Uuid;
 use crate::integration::run_with_container;
+use chrono::NaiveDateTime;
 use pg_filters::{
     sorting::{SortOrder, SortedColumn},
     ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
 };
+use uuid::Uuid;
 
 #[tokio::test]
 async fn test_logical_filters() {
@@ -28,13 +28,25 @@ async fn test_logical_filters() {
             ],
             Some(FilteringOptions::new(vec![
                 // Less restrictive filters for logical results
-                (ColumnDef::Text("name"), "LIKE".to_string(), "%name1%".to_string()),
+                (
+                    ColumnDef::Text("name"),
+                    "LIKE".to_string(),
+                    "%name1%".to_string(),
+                ),
                 (ColumnDef::Integer("age"), ">".to_string(), "10".to_string()),
-                (ColumnDef::DoublePrecision("capacity"), "<=".to_string(), "15.0".to_string()),
-                (ColumnDef::Boolean("active"), "=".to_string(), "true".to_string()),
+                (
+                    ColumnDef::DoublePrecision("capacity"),
+                    "<=".to_string(),
+                    "15.0".to_string(),
+                ),
+                (
+                    ColumnDef::Boolean("active"),
+                    "=".to_string(),
+                    "true".to_string(),
+                ),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         // Generate SQL and execute query
         let sql = filters.sql().unwrap();
@@ -55,15 +67,12 @@ async fn test_logical_filters() {
             .collect();
 
         // Adjust expectations to match the updated data
-        let expected_rows = vec![
-            ("name14".to_string(), 14),
-            ("name12".to_string(), 12),
-        ];
+        let expected_rows = vec![("name14".to_string(), 14), ("name12".to_string(), 12)];
 
         // Assert results
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -94,7 +103,7 @@ async fn test_date_and_uuid() {
                 ),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -128,7 +137,7 @@ async fn test_date_and_uuid() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -146,11 +155,19 @@ async fn test_boolean_and_capacity() {
                 order: SortOrder::Desc,
             }],
             Some(FilteringOptions::new(vec![
-                (ColumnDef::Boolean("active"), "=".to_string(), "true".to_string()),
-                (ColumnDef::DoublePrecision("capacity"), "<=".to_string(), "10.0".to_string()),
+                (
+                    ColumnDef::Boolean("active"),
+                    "=".to_string(),
+                    "true".to_string(),
+                ),
+                (
+                    ColumnDef::DoublePrecision("capacity"),
+                    "<=".to_string(),
+                    "10.0".to_string(),
+                ),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -180,7 +197,7 @@ async fn test_boolean_and_capacity() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -204,11 +221,15 @@ async fn test_name_and_age() {
                 },
             ],
             Some(FilteringOptions::new(vec![
-                (ColumnDef::Text("name"), "LIKE".to_string(), "%name%".to_string()),
+                (
+                    ColumnDef::Text("name"),
+                    "LIKE".to_string(),
+                    "%name%".to_string(),
+                ),
                 (ColumnDef::Integer("age"), ">".to_string(), "5".to_string()),
             ])),
         )
-            .unwrap();
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -241,7 +262,7 @@ async fn test_name_and_age() {
 
         assert_eq!(rows, expected_rows);
     })
-        .await;
+    .await;
 }
 
 #[tokio::test]
@@ -346,7 +367,8 @@ async fn test_float_bool() {
                     "6".to_string(),
                 ),
             ])),
-        ).unwrap();
+        )
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -399,7 +421,8 @@ async fn test_in() {
                 "IN".to_string(),
                 "11,12,13".to_string(),
             )])),
-        ).unwrap();
+        )
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -460,7 +483,8 @@ async fn test_starts_with() {
                     "17".to_string(),
                 ),
             ])),
-        ).unwrap();
+        )
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -515,7 +539,8 @@ async fn test_text_search() {
                     "%nickname1%".to_string(),
                 ),
             ])),
-        ).unwrap();
+        )
+        .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);

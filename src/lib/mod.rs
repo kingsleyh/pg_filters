@@ -1,7 +1,7 @@
-use eyre::Result;
 use crate::filtering::{FilterBuilder, FilterCondition, FilterOperator};
 use crate::pagination::Paginate;
 use crate::sorting::{SortedColumn, Sorting};
+use eyre::Result;
 
 pub mod filtering;
 pub mod pagination;
@@ -111,7 +111,11 @@ impl ColumnDef {
                 value: if operator == "IS NULL" || operator == "IS NOT NULL" {
                     None
                 } else {
-                    Some(value.parse::<i16>().map_err(|_| eyre::eyre!("Invalid small integer value: {}", value))?)
+                    Some(
+                        value
+                            .parse::<i16>()
+                            .map_err(|_| eyre::eyre!("Invalid small integer value: {}", value))?,
+                    )
                 },
             }),
             ColumnDef::Integer(name) => Ok(FilterCondition::IntegerValue {
@@ -120,7 +124,11 @@ impl ColumnDef {
                 value: if operator == "IS NULL" || operator == "IS NOT NULL" {
                     None
                 } else {
-                    Some(value.parse::<i32>().map_err(|_| eyre::eyre!("Invalid integer value: {}", value))?)
+                    Some(
+                        value
+                            .parse::<i32>()
+                            .map_err(|_| eyre::eyre!("Invalid integer value: {}", value))?,
+                    )
                 },
             }),
             ColumnDef::BigInt(name) => Ok(FilterCondition::BigIntValue {
@@ -129,7 +137,11 @@ impl ColumnDef {
                 value: if operator == "IS NULL" || operator == "IS NOT NULL" {
                     None
                 } else {
-                    Some(value.parse::<i64>().map_err(|_| eyre::eyre!("Invalid big integer value: {}", value))?)
+                    Some(
+                        value
+                            .parse::<i64>()
+                            .map_err(|_| eyre::eyre!("Invalid big integer value: {}", value))?,
+                    )
                 },
             }),
             ColumnDef::Decimal(name) | ColumnDef::Real(name) | ColumnDef::DoublePrecision(name) => {
@@ -139,7 +151,11 @@ impl ColumnDef {
                     value: if operator == "IS NULL" || operator == "IS NOT NULL" {
                         None
                     } else {
-                        Some(value.parse::<f64>().map_err(|_| eyre::eyre!("Invalid decimal value: {}", value))?)
+                        Some(
+                            value
+                                .parse::<f64>()
+                                .map_err(|_| eyre::eyre!("Invalid decimal value: {}", value))?,
+                        )
                     },
                 })
             }
@@ -151,7 +167,11 @@ impl ColumnDef {
                 value: if operator == "IS NULL" || operator == "IS NOT NULL" {
                     None
                 } else {
-                    Some(value.parse::<bool>().map_err(|_| eyre::eyre!("Invalid boolean value: {}", value))?)
+                    Some(
+                        value
+                            .parse::<bool>()
+                            .map_err(|_| eyre::eyre!("Invalid boolean value: {}", value))?,
+                    )
                 },
             }),
 
@@ -194,17 +214,18 @@ impl ColumnDef {
             }),
 
             // Network Address Types
-            ColumnDef::Inet(name) | ColumnDef::Cidr(name) | ColumnDef::MacAddr(name) | ColumnDef::MacAddr8(name) => {
-                Ok(FilterCondition::TextValue {
-                    column: name.to_string(),
-                    operator: op,
-                    value: if operator == "IS NULL" || operator == "IS NOT NULL" {
-                        None
-                    } else {
-                        Some(value.to_string())
-                    },
-                })
-            }
+            ColumnDef::Inet(name)
+            | ColumnDef::Cidr(name)
+            | ColumnDef::MacAddr(name)
+            | ColumnDef::MacAddr8(name) => Ok(FilterCondition::TextValue {
+                column: name.to_string(),
+                operator: op,
+                value: if operator == "IS NULL" || operator == "IS NOT NULL" {
+                    None
+                } else {
+                    Some(value.to_string())
+                },
+            }),
 
             // Binary Data
             ColumnDef::ByteA(name) => Ok(FilterCondition::TextValue {
@@ -272,12 +293,7 @@ pub struct PaginationOptions {
 }
 
 impl PaginationOptions {
-    pub fn new(
-        current_page: i64,
-        per_page: i64,
-        per_page_limit: i64,
-        total_records: i64,
-    ) -> Self {
+    pub fn new(current_page: i64, per_page: i64, per_page_limit: i64, total_records: i64) -> Self {
         Self {
             current_page,
             per_page,
@@ -379,8 +395,8 @@ impl PgFilters {
 
 #[cfg(test)]
 mod tests {
-    use crate::sorting::SortedColumn;
     use super::*;
+    use crate::sorting::SortedColumn;
 
     #[test]
     fn test_pg_filters() -> eyre::Result<()> {

@@ -1,5 +1,8 @@
 use eyre::Result;
-use pg_filters::{sorting::{SortOrder, SortedColumn}, ColumnDef, FilteringOptions, PaginationOptions, PgFilters};
+use pg_filters::{
+    sorting::{SortOrder, SortedColumn},
+    ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
+};
 
 #[test]
 fn test_filtering_with_sorting_with_pagination() -> Result<()> {
@@ -203,7 +206,11 @@ fn test_with_many_filters_and_many_sorting_and_pagination() -> Result<()> {
         Some(FilteringOptions::new(vec![
             (ColumnDef::Text("name"), "=".to_string(), "John".to_string()),
             (ColumnDef::Integer("age"), ">".to_string(), "18".to_string()),
-            (ColumnDef::Text("email"), "LIKE".to_string(), "%gmail.com%".to_string()),
+            (
+                ColumnDef::Text("email"),
+                "LIKE".to_string(),
+                "%gmail.com%".to_string(),
+            ),
         ])),
     )?;
 
