@@ -18,6 +18,8 @@ path = "src/lib/mod.rs"
 
 [dependencies]
 eyre = "0.6.12"
+uuid = { version = "1.11.0", features = ["v4", "fast-rng", "macro-diagnostics", "serde"] }
+hex = "0.4.3"
 
 [dev-dependencies]
 testcontainers-modules = {  version = "0.9.0", features = ["postgres", "blocking"] }
