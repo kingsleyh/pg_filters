@@ -43,13 +43,6 @@ impl FilterOperator {
         match self {
             FilterOperator::StartsWith => format!("{}%", value), // Append `%` for "starts with"
             FilterOperator::EndsWith => format!("%{}", value),   // Prepend `%` for "ends with"
-            // FilterOperator::In | FilterOperator::NotIn => {
-            //     // Surround each value with single quotes and join with commas
-            //     let values: Vec<String> = value.split(',')
-            //         .map(|v| format!("'{}'", v.trim()))
-            //         .collect();
-            //     format!("({})", values.join(", "))
-            // }
             _ => value.to_string(),
         }
     }
