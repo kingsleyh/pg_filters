@@ -1,4 +1,5 @@
 use eyre::Result;
+use std::fmt;
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,6 +14,16 @@ impl LogicalOperator {
             LogicalOperator::And => "AND",
             LogicalOperator::Or => "OR",
         }
+    }
+}
+
+impl fmt::Display for LogicalOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let operator_str = match self {
+            LogicalOperator::And => "AND",
+            LogicalOperator::Or => "OR",
+        };
+        write!(f, "{}", operator_str)
     }
 }
 
@@ -71,7 +82,29 @@ impl FilterOperator {
     }
 }
 
-#[derive(Debug, Clone)]
+impl fmt::Display for FilterOperator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let operator_str = match self {
+            FilterOperator::Equal => "=",
+            FilterOperator::NotEqual => "!=",
+            FilterOperator::GreaterThan => ">",
+            FilterOperator::GreaterThanOrEqual => ">=",
+            FilterOperator::LessThan => "<",
+            FilterOperator::LessThanOrEqual => "<=",
+            FilterOperator::Like => "LIKE",
+            FilterOperator::NotLike => "NOT LIKE",
+            FilterOperator::In => "IN",
+            FilterOperator::NotIn => "NOT IN",
+            FilterOperator::IsNull => "IS NULL",
+            FilterOperator::IsNotNull => "IS NOT NULL",
+            FilterOperator::StartsWith => "LIKE",
+            FilterOperator::EndsWith => "LIKE",
+        };
+        write!(f, "{}", operator_str)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum FilterExpression {
     Condition(FilterCondition),
     Group {
@@ -107,7 +140,30 @@ impl FilterExpression {
     }
 }
 
-#[derive(Debug, Clone)]
+impl fmt::Display for FilterExpression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FilterExpression::Condition(condition) => write!(f, "{}", condition),
+            FilterExpression::Group {
+                operator,
+                expressions,
+            } => {
+                write!(
+                    f,
+                    "({} {})",
+                    operator,
+                    expressions
+                        .iter()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<_>>()
+                        .join(&format!(" {} ", operator))
+                )
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum FilterCondition {
     // Character Types
     TextValue {
@@ -268,7 +324,18 @@ pub enum FilterCondition {
 }
 
 impl FilterCondition {
-    pub fn to_sql(&self, case_insensitive: bool) -> Result<String> {
+    fn format_value<T: fmt::Display>(
+        column: &str,
+        operator: &FilterOperator,
+        value: Option<T>,
+    ) -> String {
+        match value {
+            Some(v) => format!("{} {} {}", column, operator.as_sql(), v),
+            None => format!("{} {}", column, operator.as_sql()),
+        }
+    }
+
+    pub fn to_sql1(&self, case_insensitive: bool) -> Result<String> {
         match self {
             // Character Types
             FilterCondition::TextValue {
@@ -508,9 +575,197 @@ impl FilterCondition {
             },
         }
     }
+
+    pub fn to_sql(&self, case_insensitive: bool) -> Result<String> {
+        match self {
+            // Character Types
+            FilterCondition::TextValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::VarcharValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::CharValue {
+                column,
+                operator,
+                value,
+            } => match value {
+                Some(v) => {
+                    let formatted_value = operator.format_value(&v.replace('\'', "''"));
+                    if case_insensitive {
+                        Ok(format!(
+                            "LOWER({}) {} LOWER('{}')",
+                            column,
+                            operator.as_sql(),
+                            formatted_value
+                        ))
+                    } else {
+                        Ok(format!(
+                            "{} {} '{}'",
+                            column,
+                            operator.as_sql(),
+                            formatted_value
+                        ))
+                    }
+                }
+                None => Ok(format!("{} {}", column, operator.as_sql())),
+            },
+
+            // Multi-value conditions
+            FilterCondition::InValues {
+                column,
+                operator,
+                values,
+            } => {
+                let formatted_values = operator.format_values(values);
+                Ok(format!(
+                    "{} {} ({})",
+                    column,
+                    operator.as_sql(),
+                    formatted_values
+                ))
+            }
+
+            // Numeric Types
+            FilterCondition::SmallIntValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::IntegerValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::BigIntValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::DecimalValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::RealValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::DoublePrecisionValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+
+            // Date/Time Types
+            FilterCondition::DateValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::TimeValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::TimeTzValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::TimestampValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::TimestampTzValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::IntervalValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, value.as_deref())),
+
+            // Boolean Type
+            FilterCondition::BooleanValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, *value)),
+
+            // UUID and String-Like Types
+            FilterCondition::UuidValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::JsonValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::JsonbValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::InetValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::CidrValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::MacAddrValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::MacAddr8Value {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::ByteAValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::MoneyValue {
+                column,
+                operator,
+                value,
+            }
+            | FilterCondition::XmlValue {
+                column,
+                operator,
+                value,
+            } => Ok(Self::format_value(column, operator, value.as_deref())),
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
+impl fmt::Display for FilterCondition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.to_sql(false) {
+            Ok(sql) => write!(f, "{}", sql),
+            Err(err) => write!(f, "Error: {}", err),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct FilterBuilder {
     pub root: Option<FilterExpression>,
     pub case_insensitive: bool,
