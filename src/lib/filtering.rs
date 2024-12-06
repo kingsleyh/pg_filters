@@ -324,6 +324,7 @@ pub enum FilterCondition {
 }
 
 impl FilterCondition {
+    /// Helper function to format SQL conditions
     fn format_value<T: fmt::Display>(
         column: &str,
         operator: &FilterOperator,
@@ -335,429 +336,113 @@ impl FilterCondition {
         }
     }
 
-    pub fn to_sql1(&self, case_insensitive: bool) -> Result<String> {
-        match self {
-            // Character Types
-            FilterCondition::TextValue {
+    /// Helper function to format string-like values with proper quoting
+    fn format_string_value(column: &str, operator: &FilterOperator, value: Option<&str>) -> String {
+        match value {
+            Some(v) => format!(
+                "{} {} '{}'",
                 column,
-                operator,
-                value,
-            }
-            | FilterCondition::VarcharValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::CharValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => {
-                    let formatted_value = operator.format_value(&v.replace('\'', "''"));
-                    if case_insensitive {
-                        Ok(format!(
-                            "LOWER({}) {} LOWER('{}')",
-                            column,
-                            operator.as_sql(),
-                            formatted_value
-                        ))
-                    } else {
-                        Ok(format!(
-                            "{} {} '{}'",
-                            column,
-                            operator.as_sql(),
-                            formatted_value
-                        ))
-                    }
-                }
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Multi-value conditions
-            FilterCondition::InValues {
-                column,
-                operator,
-                values,
-            } => {
-                let formatted_values = operator.format_values(values);
-                Ok(format!(
-                    "{} {} ({})",
-                    column,
-                    operator.as_sql(),
-                    formatted_values
-                ))
-            }
-
-            // SmallInt Type
-            FilterCondition::SmallIntValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Integer Type
-            FilterCondition::IntegerValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // BigInt Type
-            FilterCondition::BigIntValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Real Type
-            FilterCondition::RealValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // DoublePrecision Type
-            FilterCondition::DoublePrecisionValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Decimal Type
-            FilterCondition::DecimalValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Date/Time Types
-            FilterCondition::DateValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimeValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimeTzValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimestampValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimestampTzValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::IntervalValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Boolean Type
-            FilterCondition::BooleanValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} {}", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // UUID Type
-            FilterCondition::UuidValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // JSON Types
-            FilterCondition::JsonValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::JsonbValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Network Address Types
-            FilterCondition::InetValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::CidrValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::MacAddrValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::MacAddr8Value {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Binary Data
-            FilterCondition::ByteAValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // Money Type
-            FilterCondition::MoneyValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
-
-            // XML
-            FilterCondition::XmlValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => Ok(format!("{} {} '{}'", column, operator.as_sql(), v)),
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
+                operator.as_sql(),
+                v.replace('\'', "''") // Escape single quotes
+            ),
+            None => format!("{} {}", column, operator.as_sql()),
         }
     }
 
+    /// SQL formatting for filter conditions
     pub fn to_sql(&self, case_insensitive: bool) -> Result<String> {
         match self {
             // Character Types
-            FilterCondition::TextValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::VarcharValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::CharValue {
-                column,
-                operator,
-                value,
-            } => match value {
-                Some(v) => {
-                    let formatted_value = operator.format_value(&v.replace('\'', "''"));
-                    if case_insensitive {
-                        Ok(format!(
-                            "LOWER({}) {} LOWER('{}')",
-                            column,
-                            operator.as_sql(),
-                            formatted_value
-                        ))
-                    } else {
-                        Ok(format!(
-                            "{} {} '{}'",
-                            column,
-                            operator.as_sql(),
-                            formatted_value
-                        ))
+            FilterCondition::TextValue { column, operator, value }
+            | FilterCondition::VarcharValue { column, operator, value }
+            | FilterCondition::CharValue { column, operator, value } => {
+                match value {
+                    Some(v) => {
+                        let formatted_value = operator.format_value(&v.replace('\'', "''"));
+                        if case_insensitive {
+                            Ok(format!(
+                                "LOWER({}) {} LOWER('{}')",
+                                column,
+                                operator.as_sql(),
+                                formatted_value
+                            ))
+                        } else {
+                            Ok(format!(
+                                "{} {} '{}'",
+                                column,
+                                operator.as_sql(),
+                                formatted_value
+                            ))
+                        }
                     }
+                    None => Ok(format!("{} {}", column, operator.as_sql())),
                 }
-                None => Ok(format!("{} {}", column, operator.as_sql())),
-            },
+            }
 
             // Multi-value conditions
-            FilterCondition::InValues {
-                column,
-                operator,
-                values,
-            } => {
-                let formatted_values = operator.format_values(values);
-                Ok(format!(
-                    "{} {} ({})",
-                    column,
-                    operator.as_sql(),
-                    formatted_values
-                ))
+            FilterCondition::InValues { column, operator, values } => {
+                let formatted_values = values
+                    .iter()
+                    .map(|v| format!("'{}'", v.replace('\'', "''")))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Ok(format!("{} {} ({})", column, operator.as_sql(), formatted_values))
             }
 
             // Numeric Types
-            FilterCondition::SmallIntValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
-            FilterCondition::IntegerValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
-            FilterCondition::BigIntValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
-            FilterCondition::DecimalValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
-            FilterCondition::RealValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
-            FilterCondition::DoublePrecisionValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::SmallIntValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
+            FilterCondition::IntegerValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
+            FilterCondition::BigIntValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
+            FilterCondition::DecimalValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
+            FilterCondition::RealValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
+            FilterCondition::DoublePrecisionValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
 
             // Date/Time Types
-            FilterCondition::DateValue {
-                column,
-                operator,
-                value,
+            FilterCondition::DateValue { column, operator, value }
+            | FilterCondition::TimeValue { column, operator, value }
+            | FilterCondition::TimeTzValue { column, operator, value }
+            | FilterCondition::TimestampValue { column, operator, value }
+            | FilterCondition::TimestampTzValue { column, operator, value }
+            | FilterCondition::IntervalValue { column, operator, value } => {
+                Ok(Self::format_string_value(column, operator, value.as_deref()))
             }
-            | FilterCondition::TimeValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimeTzValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimestampValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::TimestampTzValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::IntervalValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, value.as_deref())),
 
             // Boolean Type
-            FilterCondition::BooleanValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
+            FilterCondition::BooleanValue { column, operator, value } => {
+                Ok(Self::format_value(column, operator, *value))
+            }
 
             // UUID and String-Like Types
-            FilterCondition::UuidValue {
-                column,
-                operator,
-                value,
+            FilterCondition::UuidValue { column, operator, value }
+            | FilterCondition::JsonValue { column, operator, value }
+            | FilterCondition::JsonbValue { column, operator, value }
+            | FilterCondition::InetValue { column, operator, value }
+            | FilterCondition::CidrValue { column, operator, value }
+            | FilterCondition::MacAddrValue { column, operator, value }
+            | FilterCondition::MacAddr8Value { column, operator, value }
+            | FilterCondition::ByteAValue { column, operator, value }
+            | FilterCondition::MoneyValue { column, operator, value }
+            | FilterCondition::XmlValue { column, operator, value } => {
+                Ok(Self::format_string_value(column, operator, value.as_deref()))
             }
-            | FilterCondition::JsonValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::JsonbValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::InetValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::CidrValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::MacAddrValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::MacAddr8Value {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::ByteAValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::MoneyValue {
-                column,
-                operator,
-                value,
-            }
-            | FilterCondition::XmlValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, value.as_deref())),
         }
     }
 }
 
 impl fmt::Display for FilterCondition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
         match self.to_sql(false) {
             Ok(sql) => write!(f, "{}", sql),
             Err(err) => write!(f, "Error: {}", err),
