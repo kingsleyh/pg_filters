@@ -138,6 +138,22 @@ impl FilterExpression {
             }
         }
     }
+
+    #[cfg(test)]
+    pub fn and(expressions: Vec<FilterExpression>) -> Self {
+        FilterExpression::Group {
+            operator: LogicalOperator::And,
+            expressions,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn or(expressions: Vec<FilterExpression>) -> Self {
+        FilterExpression::Group {
+            operator: LogicalOperator::Or,
+            expressions,
+        }
+    }
 }
 
 impl fmt::Display for FilterExpression {
@@ -538,6 +554,78 @@ impl FilterCondition {
                 operator,
                 value.as_deref(),
             )),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn text(column: &str, operator: FilterOperator, value: Option<&str>) -> Self {
+        FilterCondition::TextValue {
+            column: column.to_string(),
+            operator,
+            value: value.map(ToString::to_string),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn varchar(column: &str, operator: FilterOperator, value: Option<&str>) -> Self {
+        FilterCondition::VarcharValue {
+            column: column.to_string(),
+            operator,
+            value: value.map(ToString::to_string),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn number(column: &str, operator: FilterOperator, value: Option<f64>) -> Self {
+        FilterCondition::DoublePrecisionValue {
+            column: column.to_string(),
+            operator,
+            value,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn integer(column: &str, operator: FilterOperator, value: Option<i32>) -> Self {
+        FilterCondition::IntegerValue {
+            column: column.to_string(),
+            operator,
+            value,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn timestamp(column: &str, operator: FilterOperator, value: Option<&str>) -> Self {
+        FilterCondition::TimestampValue {
+            column: column.to_string(),
+            operator,
+            value: value.map(ToString::to_string),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn boolean(column: &str, operator: FilterOperator, value: Option<bool>) -> Self {
+        FilterCondition::BooleanValue {
+            column: column.to_string(),
+            operator,
+            value,
+        }
+    }
+
+    #[cfg(test)]
+    pub fn in_values(column: &str, operator: FilterOperator, values: Vec<&str>) -> Self {
+        FilterCondition::InValues {
+            column: column.to_string(),
+            operator,
+            values: values.into_iter().map(ToString::to_string).collect(),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn uuid(column: &str, operator: FilterOperator, value: Option<&str>) -> Self {
+        FilterCondition::UuidValue {
+            column: column.to_string(),
+            operator,
+            value: value.map(ToString::to_string),
         }
     }
 }
