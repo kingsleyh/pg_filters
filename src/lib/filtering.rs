@@ -557,7 +557,6 @@ impl FilterCondition {
         }
     }
 
-    #[cfg(test)]
     pub fn text(column: &str, operator: FilterOperator, value: Option<&str>) -> Self {
         FilterCondition::TextValue {
             column: column.to_string(),
