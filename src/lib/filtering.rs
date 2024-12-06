@@ -219,11 +219,6 @@ pub enum FilterCondition {
         operator: FilterOperator,
         value: Option<i64>,
     },
-    DecimalValue {
-        column: String,
-        operator: FilterOperator,
-        value: Option<f64>,
-    },
     RealValue {
         column: String,
         operator: FilterOperator,
@@ -438,11 +433,6 @@ impl FilterCondition {
                 operator,
                 value,
             } => Ok(Self::format_value(column, operator, *value)),
-            FilterCondition::DecimalValue {
-                column,
-                operator,
-                value,
-            } => Ok(Self::format_value(column, operator, *value)),
             FilterCondition::RealValue {
                 column,
                 operator,
@@ -571,7 +561,7 @@ impl FilterCondition {
         }
     }
 
-    pub fn number(column: &str, operator: FilterOperator, value: Option<f64>) -> Self {
+    pub fn double(column: &str, operator: FilterOperator, value: Option<f64>) -> Self {
         FilterCondition::DoublePrecisionValue {
             column: column.to_string(),
             operator,

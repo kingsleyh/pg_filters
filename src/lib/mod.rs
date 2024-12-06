@@ -15,7 +15,6 @@ pub enum ColumnDef {
     SmallInt(&'static str),
     Integer(&'static str),
     BigInt(&'static str),
-    Decimal(&'static str),
     Real(&'static str),
     DoublePrecision(&'static str),
 
@@ -146,8 +145,8 @@ impl ColumnDef {
                     )
                 },
             }),
-            ColumnDef::Decimal(name) | ColumnDef::Real(name) | ColumnDef::DoublePrecision(name) => {
-                Ok(FilterCondition::DecimalValue {
+            ColumnDef::Real(name) | ColumnDef::DoublePrecision(name) => {
+                Ok(FilterCondition::DoublePrecisionValue {
                     column: name.to_string(),
                     operator: op,
                     value: if operator == "IS NULL" || operator == "IS NOT NULL" {
@@ -272,7 +271,6 @@ impl ColumnDef {
             | ColumnDef::SmallInt(name)
             | ColumnDef::Integer(name)
             | ColumnDef::BigInt(name)
-            | ColumnDef::Decimal(name)
             | ColumnDef::Real(name)
             | ColumnDef::DoublePrecision(name)
             | ColumnDef::Date(name)
