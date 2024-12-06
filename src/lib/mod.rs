@@ -336,7 +336,7 @@ impl FilteringOptions {
         }
     }
 
-    fn to_filter_builder(&self) -> Result<FilterBuilder> {
+    pub fn to_filter_builder(&self) -> Result<FilterBuilder> {
         let mut builder = FilterBuilder::new().case_insensitive(self.case_insensitive);
 
         // If there are multiple expressions, wrap them in a group with AND operator
@@ -347,6 +347,17 @@ impl FilteringOptions {
         }
 
         Ok(builder)
+    }
+
+    pub fn try_from_expressions(
+        expressions: Vec<Result<FilterExpression, eyre::Error>>,
+    ) -> Result<Option<Self>> {
+        let expressions: Result<Vec<_>, _> = expressions.into_iter().collect();
+        match expressions {
+            Ok(exprs) if !exprs.is_empty() => Ok(Some(Self::new(exprs))),
+            Ok(_) => Ok(None),
+            Err(e) => Err(e),
+        }
     }
 }
 
@@ -403,6 +414,14 @@ impl PgFilters {
             sql.push_str(&pagination.sql);
         }
 
+        Ok(sql)
+    }
+
+    pub fn count_sql(&self, schema: &str, table: &str) -> Result<String> {
+        let mut sql = format!("SELECT COUNT(*) FROM {}.{}", schema, table);
+        if let Some(filters) = &self.filters {
+            sql.push_str(&filters.build()?);
+        }
         Ok(sql)
     }
 }
