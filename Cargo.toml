@@ -1,6 +1,6 @@
 [package]
 name = "pg_filters"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2021"
 authors = ["Kingsley Hendrickse <kingsley.hendrickse@gmail.com>"]
 description = "A simple rust helper to generate postgres sql for pagination, sorting and filtering"
