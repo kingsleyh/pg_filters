@@ -1120,6 +1120,7 @@ dependencies = [
  "deadpool",
  "deadpool-postgres",
  "eyre",
+ "serde",
  "testcontainers-modules",
  "tokio",
  "tokio-postgres",

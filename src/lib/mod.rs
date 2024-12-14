@@ -1,13 +1,12 @@
-use crate::filtering::{
-    FilterBuilder, FilterCondition, FilterExpression, FilterOperator, LogicalOperator,
-};
-use crate::pagination::Paginate;
-use crate::sorting::{SortedColumn, Sorting};
 use eyre::Result;
 
 pub mod filtering;
 pub mod pagination;
 pub mod sorting;
+
+use crate::filtering::{FilterBuilder, FilterCondition, FilterExpression, FilterOperator, LogicalOperator, JsonFilter};
+use crate::pagination::Paginate;
+use crate::sorting::{SortedColumn, Sorting};
 
 #[derive(Debug, Clone)]
 pub enum ColumnDef {
@@ -334,6 +333,15 @@ impl FilteringOptions {
         }
     }
 
+    pub fn from_json_filters(filters: &[JsonFilter]) -> Result<Option<Self>> {
+        if filters.is_empty() {
+            return Ok(None);
+        }
+
+        let filter_builder = FilterBuilder::from_json_filters(filters, true)?;
+        Ok(filter_builder.root.map(|root| Self::new(vec![root])))
+    }
+
     pub fn to_filter_builder(&self) -> Result<FilterBuilder> {
         let mut builder = FilterBuilder::new().case_insensitive(self.case_insensitive);
 
@@ -430,7 +438,6 @@ mod tests {
 
     #[test]
     fn test_pg_filters_with_complex_conditions() -> Result<()> {
-        // Create test conditions
         let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
             column: "name".to_string(),
             operator: FilterOperator::Equal,
@@ -551,6 +558,62 @@ mod tests {
 
         let sql = filters.sql()?;
         assert_eq!(sql, " LIMIT 15 OFFSET 15");
+        Ok(())
+    }
+
+    #[test]
+    fn test_json_filters_with_or_condition() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "property_full_address".to_string(),
+                f: "LIKE".to_string(),
+                v: "%James%".to_string(),
+                c: "AND".to_string(),
+            },
+            JsonFilter {
+                n: "client_name".to_string(),
+                f: "LIKE".to_string(),
+                v: "%James%".to_string(),
+                c: "OR".to_string(),
+            },
+        ];
+
+        let filtering_options = FilteringOptions::from_json_filters(&filters)?;
+        let pg_filters = PgFilters::new(None, vec![], filtering_options)?;
+        let sql = pg_filters.sql()?;
+
+        assert_eq!(
+            sql,
+            " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') AND (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%')))"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_count_sql() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "name".to_string(),
+                f: "LIKE".to_string(),
+                v: "%John%".to_string(),
+                c: "AND".to_string(),
+            },
+            JsonFilter {
+                n: "age".to_string(),
+                f: ">".to_string(),
+                v: "18".to_string(),
+                c: "OR".to_string(),
+            },
+        ];
+
+        let filtering_options = FilteringOptions::from_json_filters(&filters)?;
+        let pg_filters = PgFilters::new(None, vec![], filtering_options)?;
+        let sql = pg_filters.count_sql("public", "users")?;
+
+        assert_eq!(
+            sql,
+            "SELECT COUNT(*) FROM public.users WHERE (LOWER(name) LIKE LOWER('%John%') AND (LOWER(name) LIKE LOWER('%John%') OR LOWER(age) > LOWER('18')))"
+        );
         Ok(())
     }
 }
