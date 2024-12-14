@@ -4,7 +4,9 @@ pub mod filtering;
 pub mod pagination;
 pub mod sorting;
 
-use crate::filtering::{FilterBuilder, FilterCondition, FilterExpression, FilterOperator, LogicalOperator, JsonFilter};
+use crate::filtering::{
+    FilterBuilder, FilterCondition, FilterExpression, FilterOperator, JsonFilter, LogicalOperator,
+};
 use crate::pagination::Paginate;
 use crate::sorting::{SortedColumn, Sorting};
 
