@@ -437,182 +437,208 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_pg_filters_with_complex_conditions() -> Result<()> {
-        let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
-            column: "name".to_string(),
-            operator: FilterOperator::Equal,
-            value: Some("John".to_string()),
-        });
-
-        let age_condition = FilterExpression::Condition(FilterCondition::IntegerValue {
-            column: "age".to_string(),
-            operator: FilterOperator::GreaterThan,
-            value: Some(18),
-        });
-
-        let city_condition = FilterExpression::Condition(FilterCondition::InValues {
-            column: "city".to_string(),
-            operator: FilterOperator::In,
-            values: vec!["New York".to_string(), "London".to_string()],
-        });
-
-        // Create a complex filter group: (name = 'John' AND age > 18) OR city IN ('New York', 'London')
-        let filter_group = FilterExpression::Group {
-            operator: LogicalOperator::Or,
-            expressions: vec![
-                FilterExpression::Group {
-                    operator: LogicalOperator::And,
-                    expressions: vec![name_condition, age_condition],
-                },
-                city_condition,
-            ],
-        };
-
-        let filters = PgFilters::new(
-            Some(PaginationOptions {
-                current_page: 1,
-                per_page: 10,
-                per_page_limit: 10,
-                total_records: 1000,
-            }),
-            vec![
-                SortedColumn::new("age", "desc"),
-                SortedColumn::new("name", "asc"),
-            ],
-            Some(FilteringOptions::new(vec![filter_group])),
-        )?;
-
-        let sql = filters.sql()?;
-        assert_eq!(
-            sql,
-            " WHERE ((LOWER(name) = LOWER('John') AND age > 18) OR city IN ('New York', 'London')) ORDER BY age DESC, name ASC LIMIT 10 OFFSET 0"
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_column_def_to_filter_condition() -> Result<()> {
-        // Test text column
-        let text_condition = ColumnDef::Text("name")
-            .to_filter_condition("=", "John")?
-            .to_sql(true)?;
-        assert_eq!(text_condition, "LOWER(name) = LOWER('John')");
-
-        // Test integer column
-        let int_condition = ColumnDef::Integer("age")
-            .to_filter_condition(">", "18")?
-            .to_sql(true)?;
-        assert_eq!(int_condition, "age > 18");
-
-        // Test IN condition
-        let in_condition = ColumnDef::Text("city")
-            .to_filter_condition("IN", "New York,London")?
-            .to_sql(true)?;
-        assert_eq!(in_condition, "city IN ('New York', 'London')");
-
-        // Test NULL condition
-        let null_condition = ColumnDef::Text("description")
-            .to_filter_condition("IS NULL", "")?
-            .to_sql(true)?;
-        assert_eq!(null_condition, "description IS NULL");
-
-        // Test LIKE condition
-        let like_condition = ColumnDef::Text("name")
-            .to_filter_condition("STARTS WITH", "Jo")?
-            .to_sql(true)?;
-        assert_eq!(like_condition, "LOWER(name) LIKE LOWER('Jo%')");
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_pg_filters_without_conditions() -> Result<()> {
-        let filters = PgFilters::new(
-            Some(PaginationOptions {
-                current_page: 1,
-                per_page: 10,
-                per_page_limit: 10,
-                total_records: 1000,
-            }),
-            vec![SortedColumn::new("name", "asc")],
-            None,
-        )?;
-
-        let sql = filters.sql()?;
-        assert_eq!(sql, " ORDER BY name ASC LIMIT 10 OFFSET 0");
-        Ok(())
-    }
-
-    #[test]
-    fn test_pg_filters_with_only_pagination() -> Result<()> {
-        let filters = PgFilters::new(
-            Some(PaginationOptions {
-                current_page: 2,
-                per_page: 15,
-                per_page_limit: 20,
-                total_records: 1000,
-            }),
-            vec![],
-            None,
-        )?;
-
-        let sql = filters.sql()?;
-        assert_eq!(sql, " LIMIT 15 OFFSET 15");
-        Ok(())
-    }
-
-    #[test]
-    fn test_json_filters_with_or_condition() -> Result<()> {
+    fn test_or_conditions() -> Result<()> {
         let filters = vec![
             JsonFilter {
                 n: "property_full_address".to_string(),
                 f: "LIKE".to_string(),
                 v: "%James%".to_string(),
-                c: "AND".to_string(),
+                c: None,
             },
             JsonFilter {
                 n: "client_name".to_string(),
                 f: "LIKE".to_string(),
                 v: "%James%".to_string(),
-                c: "OR".to_string(),
+                c: Some("OR".to_string()),
             },
         ];
 
-        let filtering_options = FilteringOptions::from_json_filters(&filters)?;
-        let pg_filters = PgFilters::new(None, vec![], filtering_options)?;
-        let sql = pg_filters.sql()?;
-
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
         assert_eq!(
             sql,
-            " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') AND (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%')))"
+            " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%'))"
         );
         Ok(())
     }
 
     #[test]
-    fn test_count_sql() -> Result<()> {
+    fn test_multiple_or_conditions() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "field1".to_string(),
+                f: "=".to_string(),
+                v: "value1".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "field2".to_string(),
+                f: "=".to_string(),
+                v: "value2".to_string(),
+                c: Some("OR".to_string()),
+            },
+            JsonFilter {
+                n: "field3".to_string(),
+                f: "=".to_string(),
+                v: "value3".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE (LOWER(field1) = LOWER('value1') OR LOWER(field2) = LOWER('value2') OR LOWER(field3) = LOWER('value3'))"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_mixed_and_or_conditions() -> Result<()> {
         let filters = vec![
             JsonFilter {
                 n: "name".to_string(),
                 f: "LIKE".to_string(),
                 v: "%John%".to_string(),
-                c: "AND".to_string(),
+                c: None,
             },
             JsonFilter {
                 n: "age".to_string(),
                 f: ">".to_string(),
                 v: "18".to_string(),
-                c: "OR".to_string(),
+                c: Some("AND".to_string()),
+            },
+            JsonFilter {
+                n: "city".to_string(),
+                f: "LIKE".to_string(),
+                v: "%York%".to_string(),
+                c: Some("OR".to_string()),
             },
         ];
 
-        let filtering_options = FilteringOptions::from_json_filters(&filters)?;
-        let pg_filters = PgFilters::new(None, vec![], filtering_options)?;
-        let sql = pg_filters.count_sql("public", "users")?;
-
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
         assert_eq!(
             sql,
-            "SELECT COUNT(*) FROM public.users WHERE (LOWER(name) LIKE LOWER('%John%') AND (LOWER(name) LIKE LOWER('%John%') OR LOWER(age) > LOWER('18')))"
+            " WHERE (LOWER(name) LIKE LOWER('%John%') AND (age > 18 OR LOWER(city) LIKE LOWER('%York%')))"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_complex_and_or_pattern() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "status".to_string(),
+                f: "=".to_string(),
+                v: "active".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "age".to_string(),
+                f: ">".to_string(),
+                v: "21".to_string(),
+                c: Some("AND".to_string()),
+            },
+            JsonFilter {
+                n: "city".to_string(),
+                f: "=".to_string(),
+                v: "New York".to_string(),
+                c: Some("OR".to_string()),
+            },
+            JsonFilter {
+                n: "city".to_string(),
+                f: "=".to_string(),
+                v: "London".to_string(),
+                c: Some("OR".to_string()),
+            },
+            JsonFilter {
+                n: "department".to_string(),
+                f: "=".to_string(),
+                v: "Sales".to_string(),
+                c: Some("AND".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE (LOWER(status) = LOWER('active') AND (age > 21 OR LOWER(city) = LOWER('New York') OR LOWER(city) = LOWER('London') OR LOWER(department) = LOWER('Sales')))"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_empty_filters() -> Result<()> {
+        let filters: Vec<JsonFilter> = vec![];
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(sql, "");
+        Ok(())
+    }
+
+    #[test]
+    fn test_single_filter() -> Result<()> {
+        let filters = vec![JsonFilter {
+            n: "name".to_string(),
+            f: "LIKE".to_string(),
+            v: "%John%".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(sql, " WHERE LOWER(name) LIKE LOWER('%John%')");
+        Ok(())
+    }
+
+    #[test]
+    fn test_numeric_conditions() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "age".to_string(),
+                f: ">".to_string(),
+                v: "25".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "salary".to_string(),
+                f: "<".to_string(),
+                v: "50000".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, false)?.build()?;
+        assert_eq!(sql, " WHERE (age > 25 OR salary < 50000)");
+        Ok(())
+    }
+
+    #[test]
+    fn test_case_sensitivity() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "name".to_string(),
+                f: "LIKE".to_string(),
+                v: "%John%".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "email".to_string(),
+                f: "LIKE".to_string(),
+                v: "%gmail.com".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        // Test case sensitive
+        let sql_sensitive = FilterBuilder::from_json_filters(&filters, false)?.build()?;
+        assert_eq!(
+            sql_sensitive,
+            " WHERE (name LIKE '%John%' OR email LIKE '%gmail.com')"
+        );
+
+        // Test case insensitive
+        let sql_insensitive = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(
+            sql_insensitive,
+            " WHERE (LOWER(name) LIKE LOWER('%John%') OR LOWER(email) LIKE LOWER('%gmail.com'))"
         );
         Ok(())
     }

@@ -101,10 +101,10 @@ pub enum FilterExpression {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JsonFilter {
-    pub n: String,  // name/column
-    pub f: String,  // filter operator
-    pub v: String,  // value
-    pub c: String,  // connector (AND/OR)
+    pub n: String,         // name/column
+    pub f: String,         // filter operator
+    pub v: String,         // value
+    pub c: Option<String>, // optional connector (AND/OR)
 }
 
 impl FilterExpression {
@@ -666,64 +666,82 @@ impl FilterBuilder {
             return Ok(Self::new());
         }
 
-        let mut expressions: Vec<FilterExpression> = Vec::new();
-        let mut current_group: Vec<FilterExpression> = Vec::new();
-        let mut last_connector = "AND";
-
-        for filter in filters {
-            let condition = FilterCondition::text(
-                &filter.n,
-                parse_operator(&filter.f),
-                Some(&filter.v),
-            );
-
-            if filter.c == "OR" {
-                // If this is an OR condition, create or add to OR group
-                if last_connector == "OR" {
-                    // Add to existing OR group
-                    if let Some(FilterExpression::Group { operator: LogicalOperator::Or, expressions: ref mut group_expressions }) = expressions.last_mut() {
-                        group_expressions.push(FilterExpression::Condition(condition));
-                    }
-                } else {
-                    // Start new OR group
-                    if !current_group.is_empty() {
-                        expressions.extend(current_group.drain(..));
-                    }
-                    expressions.push(FilterExpression::or(vec![
-                        expressions.clone().pop().unwrap_or(FilterExpression::Condition(condition.clone())),
-                        FilterExpression::Condition(condition),
-                    ]));
-                }
-            } else {
-                // Add to AND group
-                if last_connector == "OR" {
-                    current_group.push(FilterExpression::Condition(condition));
-                } else {
-                    expressions.push(FilterExpression::Condition(condition));
-                }
+        fn create_condition(filter: &JsonFilter) -> FilterCondition {
+            // Try to parse as number first
+            if let Ok(num) = filter.v.parse::<i32>() {
+                return FilterCondition::integer(&filter.n, parse_operator(&filter.f), Some(num));
             }
-
-            last_connector = &filter.c;
+            if let Ok(num) = filter.v.parse::<f64>() {
+                return FilterCondition::double(&filter.n, parse_operator(&filter.f), Some(num));
+            }
+            // Default to text if not a number
+            FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v))
         }
 
-        // Add any remaining conditions
-        expressions.extend(current_group);
+        // Always start with the first filter as the base condition
+        let first_condition = FilterExpression::Condition(create_condition(&filters[0]));
 
-        // Create the final filter builder
+        // If only one filter, just return it
+        if filters.len() == 1 {
+            let mut builder = Self::new().case_insensitive(case_insensitive);
+            builder.root = Some(first_condition);
+            return Ok(builder);
+        }
+
+        // Process subsequent filters
+        let mut result: Vec<FilterExpression> = vec![first_condition];
+        let mut current_or_group: Vec<FilterExpression> = Vec::new();
+
+        for filter in &filters[1..] {
+            let condition = FilterExpression::Condition(create_condition(filter));
+
+            match filter.c.as_deref() {
+                Some("OR") => {
+                    // Start or continue OR group
+                    if current_or_group.is_empty() {
+                        // First OR condition, include the last result
+                        current_or_group.push(result.pop().unwrap());
+                    }
+                    current_or_group.push(condition);
+                }
+                _ => {
+                    // Handle any accumulated OR group
+                    if !current_or_group.is_empty() {
+                        current_or_group.push(condition);
+                        result.push(FilterExpression::Group {
+                            operator: LogicalOperator::Or,
+                            expressions: current_or_group,
+                        });
+                        current_or_group = Vec::new();
+                    } else {
+                        // Regular AND condition
+                        result.push(condition);
+                    }
+                }
+            }
+        }
+
+        // Handle any remaining OR group
+        if !current_or_group.is_empty() {
+            result.push(FilterExpression::Group {
+                operator: LogicalOperator::Or,
+                expressions: current_or_group,
+            });
+        }
+
         let mut builder = Self::new().case_insensitive(case_insensitive);
 
-        if expressions.len() == 1 {
-            builder.root = expressions.pop();
-        } else if !expressions.is_empty() {
+        if result.len() == 1 {
+            builder.root = result.pop();
+        } else {
             builder.root = Some(FilterExpression::Group {
                 operator: LogicalOperator::And,
-                expressions,
+                expressions: result,
             });
         }
 
         Ok(builder)
     }
-
     pub fn build(&self) -> Result<String> {
         match &self.root {
             None => Ok(String::new()),
@@ -775,20 +793,51 @@ mod tests {
                 n: "property_full_address".to_string(),
                 f: "LIKE".to_string(),
                 v: "%James%".to_string(),
-                c: "AND".to_string(),
+                c: None,
             },
             JsonFilter {
                 n: "client_name".to_string(),
                 f: "LIKE".to_string(),
                 v: "%James%".to_string(),
-                c: "OR".to_string(),
+                c: Some("OR".to_string()),
             },
         ];
 
         let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
         assert_eq!(
             sql,
-            " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') AND (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%')))"
+            " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%'))"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_or_conditions() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "field1".to_string(),
+                f: "=".to_string(),
+                v: "value1".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "field2".to_string(),
+                f: "=".to_string(),
+                v: "value2".to_string(),
+                c: Some("OR".to_string()),
+            },
+            JsonFilter {
+                n: "field3".to_string(),
+                f: "=".to_string(),
+                v: "value3".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE (LOWER(field1) = LOWER('value1') OR LOWER(field2) = LOWER('value2') OR LOWER(field3) = LOWER('value3'))"
         );
         Ok(())
     }
@@ -800,35 +849,124 @@ mod tests {
                 n: "name".to_string(),
                 f: "LIKE".to_string(),
                 v: "%John%".to_string(),
-                c: "AND".to_string(),
+                c: None,
             },
             JsonFilter {
                 n: "age".to_string(),
                 f: ">".to_string(),
                 v: "18".to_string(),
-                c: "AND".to_string(),
+                c: Some("AND".to_string()),
             },
             JsonFilter {
                 n: "city".to_string(),
                 f: "LIKE".to_string(),
                 v: "%York%".to_string(),
-                c: "OR".to_string(),
+                c: Some("OR".to_string()),
             },
         ];
 
         let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
         assert_eq!(
             sql,
-            " WHERE (LOWER(name) LIKE LOWER('%John%') AND LOWER(age) > LOWER('18') AND (LOWER(age) > LOWER('18') OR LOWER(city) LIKE LOWER('%York%')))"
+            " WHERE (LOWER(name) LIKE LOWER('%John%') AND (age > 18 OR LOWER(city) LIKE LOWER('%York%')))"
         );
         Ok(())
     }
 
     #[test]
-    fn test_empty_filters() -> Result<()> {
-        let filters: Vec<JsonFilter> = vec![];
+    fn test_complex_and_or_pattern() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "status".to_string(),
+                f: "=".to_string(),
+                v: "active".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "age".to_string(),
+                f: ">".to_string(),
+                v: "21".to_string(),
+                c: Some("AND".to_string()),
+            },
+            JsonFilter {
+                n: "city".to_string(),
+                f: "=".to_string(),
+                v: "New York".to_string(),
+                c: Some("OR".to_string()),
+            },
+            JsonFilter {
+                n: "city".to_string(),
+                f: "=".to_string(),
+                v: "London".to_string(),
+                c: Some("OR".to_string()),
+            },
+            JsonFilter {
+                n: "department".to_string(),
+                f: "=".to_string(),
+                v: "Sales".to_string(),
+                c: Some("AND".to_string()),
+            },
+        ];
+
         let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
-        assert_eq!(sql, "");
+        assert_eq!(
+            sql,
+            " WHERE (LOWER(status) = LOWER('active') AND (age > 21 OR LOWER(city) = LOWER('New York') OR LOWER(city) = LOWER('London') OR LOWER(department) = LOWER('Sales')))"
+        );
+        Ok(())
+    }
+    #[test]
+    fn test_case_sensitivity() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "name".to_string(),
+                f: "LIKE".to_string(),
+                v: "%John%".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "email".to_string(),
+                f: "LIKE".to_string(),
+                v: "%gmail.com".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        // Test case sensitive
+        let sql_sensitive = FilterBuilder::from_json_filters(&filters, false)?.build()?;
+        assert_eq!(
+            sql_sensitive,
+            " WHERE (name LIKE '%John%' OR email LIKE '%gmail.com')"
+        );
+
+        // Test case insensitive
+        let sql_insensitive = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(
+            sql_insensitive,
+            " WHERE (LOWER(name) LIKE LOWER('%John%') OR LOWER(email) LIKE LOWER('%gmail.com'))"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_numeric_conditions() -> Result<()> {
+        let filters = vec![
+            JsonFilter {
+                n: "age".to_string(),
+                f: ">".to_string(),
+                v: "25".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "salary".to_string(),
+                f: "<".to_string(),
+                v: "50000".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, false)?.build()?;
+        assert_eq!(sql, " WHERE (age > 25 OR salary < 50000)");
         Ok(())
     }
 
@@ -838,11 +976,19 @@ mod tests {
             n: "name".to_string(),
             f: "LIKE".to_string(),
             v: "%John%".to_string(),
-            c: "AND".to_string(),
+            c: None,
         }];
 
         let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
         assert_eq!(sql, " WHERE LOWER(name) LIKE LOWER('%John%')");
+        Ok(())
+    }
+
+    #[test]
+    fn test_empty_filters() -> Result<()> {
+        let filters: Vec<JsonFilter> = vec![];
+        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        assert_eq!(sql, "");
         Ok(())
     }
 }
