@@ -10,6 +10,26 @@ A powerful Rust helper to generate PostgreSQL SQL for pagination, sorting, and a
 
 ## Usage
 
+### Column Definitions
+
+First, define your column types:
+
+```rust
+use std::collections::HashMap;
+use pg_filters::ColumnDef;
+
+fn setup_columns() -> HashMap<&'static str, ColumnDef> {
+    let mut columns = HashMap::new();
+    columns.insert("name", ColumnDef::Text("name"));
+    columns.insert("age", ColumnDef::Integer("age"));
+    columns.insert("email", ColumnDef::Text("email"));
+    columns.insert("active", ColumnDef::Boolean("active"));
+    columns.insert("created_at", ColumnDef::Timestamp("created_at"));
+    columns.insert("id", ColumnDef::Uuid("id"));
+    columns
+}
+```
+
 ### Simple Filtering
 
 Basic filtering with multiple AND conditions:
@@ -18,6 +38,8 @@ Basic filtering with multiple AND conditions:
 use pg_filters::{PgFilters, PaginationOptions, FilteringOptions, ColumnDef};
 use pg_filters::filtering::{FilterCondition, FilterExpression, FilterOperator};
 use pg_filters::sorting::SortedColumn;
+
+let columns = setup_columns();
 
 // Create simple conditions
 let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
@@ -43,7 +65,11 @@ let filters = PgFilters::new(
         SortedColumn::new("age", "desc"),
         SortedColumn::new("name", "asc"),
     ],
-    Some(FilteringOptions::new(vec![name_condition, age_condition])),
+    Some(FilteringOptions::new(
+        vec![name_condition, age_condition],
+        columns.clone(),
+    )),
+    columns,
 )?;
 
 let sql = filters.sql()?;
@@ -56,6 +82,8 @@ Example with complex AND/OR conditions:
 
 ```rust
 use pg_filters::filtering::{FilterExpression, LogicalOperator};
+
+let columns = setup_columns();
 
 // Create individual conditions
 let name_condition = FilterExpression::Condition(FilterCondition::TextValue {
@@ -70,10 +98,10 @@ let age_condition = FilterExpression::Condition(FilterCondition::IntegerValue {
     value: Some(18),
 });
 
-let city_condition = FilterExpression::Condition(FilterCondition::InValues {
+let city_condition = FilterExpression::Condition(FilterCondition::TextValue {
     column: "city".to_string(),
     operator: FilterOperator::In,
-    values: vec!["New York".to_string(), "London".to_string()],
+    value: Some("New York,London".to_string()),
 });
 
 // Create a complex filter: (name = 'John' AND age > 18) OR city IN ('New York', 'London')
@@ -96,56 +124,39 @@ let filters = PgFilters::new(
         total_records: 1000,
     }),
     vec![SortedColumn::new("name", "asc")],
-    Some(FilteringOptions::new(vec![filter_group])),
+    Some(FilteringOptions::new(vec![filter_group], columns.clone())),
+    columns,
 )?;
 
 let sql = filters.sql()?;
 // Results in: WHERE ((LOWER(name) = LOWER('John') AND age > 18) OR city IN ('New York', 'London')) ORDER BY name ASC LIMIT 10 OFFSET 0
 ```
 
-### Nested Complex Conditions
+### JSON Filter Support
 
-Example with multiple levels of nesting:
+PG Filters supports creating filters from JSON input:
 
 ```rust
-// Create a filter: (name = 'John' AND age > 18) OR (name = 'Jane' AND age < 25)
-let filters = FilteringOptions::new(vec![
-    FilterExpression::Group {
-        operator: LogicalOperator::Or,
-        expressions: vec![
-            FilterExpression::Group {
-                operator: LogicalOperator::And,
-                expressions: vec![
-                    FilterExpression::Condition(FilterCondition::TextValue {
-                        column: "name".to_string(),
-                        operator: FilterOperator::Equal,
-                        value: Some("John".to_string()),
-                    }),
-                    FilterExpression::Condition(FilterCondition::IntegerValue {
-                        column: "age".to_string(),
-                        operator: FilterOperator::GreaterThan,
-                        value: Some(18),
-                    }),
-                ],
-            },
-            FilterExpression::Group {
-                operator: LogicalOperator::And,
-                expressions: vec![
-                    FilterExpression::Condition(FilterCondition::TextValue {
-                        column: "name".to_string(),
-                        operator: FilterOperator::Equal,
-                        value: Some("Jane".to_string()),
-                    }),
-                    FilterExpression::Condition(FilterCondition::IntegerValue {
-                        column: "age".to_string(),
-                        operator: FilterOperator::LessThan,
-                        value: Some(25),
-                    }),
-                ],
-            },
-        ],
-    }
-]);
+use pg_filters::{JsonFilter, FilterBuilder};
+
+let columns = setup_columns();
+
+let json_filters = vec![
+    JsonFilter {
+        n: "name".to_string(),      // column name
+        f: "LIKE".to_string(),      // filter operator
+        v: "%John%".to_string(),    // value
+        c: None,                    // connector (AND/OR)
+    },
+    JsonFilter {
+        n: "age".to_string(),
+        f: ">".to_string(),
+        v: "18".to_string(),
+        c: Some("AND".to_string()),
+    },
+];
+
+let filter_builder = FilterBuilder::from_json_filters(&json_filters, true, &columns)?;
 ```
 
 ### Pagination with Filtered Count
@@ -153,37 +164,37 @@ let filters = FilteringOptions::new(vec![
 When you need to apply filtering rules for pagination:
 
 ```rust
-let filtering_options = FilteringOptions::new(vec![filter_expression]);
+let columns = setup_columns();
+let filtering_options = FilteringOptions::new(vec![filter_expression], columns.clone());
 
-let pagination_options = if filtering_options.expressions.is_empty() {
-    let total_rows = db.query_one(total_rows_select_statement.as_str(), &[])
-        .await
-        .map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
-    let total_records = total_rows.get::<usize, i64>(0);
+// Create count filters
+let count_filters = PgFilters::new(
+    None,
+    vec![],
+    Some(filtering_options.clone()),
+    columns.clone(),
+)?;
 
-    PaginationOptions::new(
-        current_page as i64,
-        per_page as i64,
-        50,
-        total_records as i64,
-    )
-} else {
-    let builder = filtering_options.to_filter_builder()?;
-    let filtering_sql = builder.build()?;
-    let count_sql = format!("select count(*) from {}", filtering_sql);
+// Get total count with filters applied
+let count_sql = count_filters.count_sql(schema, table)?;
+let total_rows = db.query_one(&count_sql, &[]).await?;
+let total_records = total_rows.get::<usize, i64>(0);
 
-    let total_rows = db.query_one(count_sql.as_str(), &[])
-        .await
-        .map_err(|e| eyre::eyre!("Error getting total rows: {}", e))?;
-    let total_records = total_rows.get::<usize, i64>(0);
-    
-    PaginationOptions::new(
-        current_page as i64,
-        per_page as i64,
-        50,
-        total_records as i64,
-    )
-};
+// Create pagination options
+let pagination = PaginationOptions::new(
+    current_page as i64,
+    per_page as i64,
+    50,
+    total_records,
+);
+
+// Create final filters with pagination
+let filters = PgFilters::new(
+    Some(pagination),
+    sorting_columns,
+    Some(filtering_options),
+    columns,
+)?;
 ```
 
 ## Supported Column Types
@@ -198,7 +209,7 @@ let pagination_options = if filtering_options.expressions.is_empty() {
 * Date - DATE columns
 * Timestamp - TIMESTAMP columns
 * TimestampTz - TIMESTAMP WITH TIME ZONE columns
-* Uuid - UUID columns
+* Uuid - UUID columns (case-sensitive comparison)
 * Json/Jsonb - JSON and JSONB columns
 * And many more (see documentation for full list)
 
@@ -230,8 +241,20 @@ Can be upper or lower case:
 By default, text searches are case-insensitive. You can make them case-sensitive using:
 
 ```rust
-FilteringOptions::case_sensitive(vec![filter_expression]);
+let columns = setup_columns();
+FilteringOptions::case_sensitive(vec![filter_expression], columns);
 ```
+
+## Type-Aware Filtering
+
+PG Filters now handles different column types appropriately:
+
+* Text columns use case-insensitive comparison by default (can be made case-sensitive)
+* UUID columns always use case-sensitive comparison
+* Numeric columns use direct comparison
+* Date/Time types use appropriate format
+* Boolean values are handled correctly
+* JSON fields use appropriate operators
 
 ## Pagination Details
 
