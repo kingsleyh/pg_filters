@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use crate::ColumnDef;
 use eyre::Result;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
-use crate::ColumnDef;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LogicalOperator {
@@ -421,7 +421,7 @@ impl FilterCondition {
                     operator.as_sql(),
                     formatted_values
                 ))
-            },
+            }
 
             // Numeric types
             FilterCondition::SmallIntValue {
@@ -685,7 +685,10 @@ impl FilterBuilder {
             return Ok(Self::new());
         }
 
-        fn create_condition(filter: &JsonFilter, column_defs: &HashMap<&str, ColumnDef>) -> FilterCondition {
+        fn create_condition(
+            filter: &JsonFilter,
+            column_defs: &HashMap<&str, ColumnDef>,
+        ) -> FilterCondition {
             match column_defs.get(filter.n.as_str()) {
                 Some(ColumnDef::Uuid(_)) => {
                     FilterCondition::uuid(&filter.n, parse_operator(&filter.f), Some(&filter.v))
@@ -717,23 +720,30 @@ impl FilterBuilder {
                 }
                 Some(ColumnDef::Boolean(_)) => {
                     if let Ok(bool_val) = filter.v.parse::<bool>() {
-                        FilterCondition::boolean(&filter.n, parse_operator(&filter.f), Some(bool_val))
+                        FilterCondition::boolean(
+                            &filter.n,
+                            parse_operator(&filter.f),
+                            Some(bool_val),
+                        )
                     } else {
                         FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v))
                     }
                 }
-                Some(ColumnDef::Timestamp(_)) => {
-                    FilterCondition::timestamp(&filter.n, parse_operator(&filter.f), Some(&filter.v))
-                }
+                Some(ColumnDef::Timestamp(_)) => FilterCondition::timestamp(
+                    &filter.n,
+                    parse_operator(&filter.f),
+                    Some(&filter.v),
+                ),
                 Some(ColumnDef::Text(_)) | Some(ColumnDef::Varchar(_)) => {
                     FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v))
                 }
-                _ => FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v))
+                _ => FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v)),
             }
         }
 
         // Always start with the first filter as the base condition
-        let first_condition = FilterExpression::Condition(create_condition(&filters[0], column_defs));
+        let first_condition =
+            FilterExpression::Condition(create_condition(&filters[0], column_defs));
 
         // If only one filter, just return it
         if filters.len() == 1 {
@@ -812,7 +822,6 @@ impl FilterBuilder {
     }
 }
 
-
 fn parse_operator(op: &str) -> FilterOperator {
     match op {
         "LIKE" => FilterOperator::Like,
@@ -845,7 +854,10 @@ mod tests {
     fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
         let mut columns = HashMap::new();
         columns.insert("id", ColumnDef::Uuid("id"));
-        columns.insert("property_full_address", ColumnDef::Text("property_full_address"));
+        columns.insert(
+            "property_full_address",
+            ColumnDef::Text("property_full_address"),
+        );
         columns.insert("client_name", ColumnDef::Text("client_name"));
         columns.insert("name", ColumnDef::Text("name"));
         columns.insert("email", ColumnDef::Text("email"));
@@ -1019,7 +1031,8 @@ mod tests {
         );
 
         // Test case insensitive
-        let sql_insensitive = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        let sql_insensitive =
+            FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
         assert_eq!(
             sql_insensitive,
             " WHERE (LOWER(name) LIKE LOWER('%John%') OR LOWER(email) LIKE LOWER('%gmail.com'))"
@@ -1078,21 +1091,16 @@ mod tests {
     #[test]
     fn test_uuid_conditions() -> Result<()> {
         let columns = setup_test_columns();
-        let filters = vec![
-            JsonFilter {
-                n: "id".to_string(),
-                f: "=".to_string(),
-                v: "123e4567-e89b-12d3-a456-426614174000".to_string(),
-                c: None,
-            },
-        ];
+        let filters = vec![JsonFilter {
+            n: "id".to_string(),
+            f: "=".to_string(),
+            v: "123e4567-e89b-12d3-a456-426614174000".to_string(),
+            c: None,
+        }];
 
         // Case sensitivity should be ignored for UUID
         let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
-        assert_eq!(
-            sql,
-            " WHERE id = '123e4567-e89b-12d3-a456-426614174000'"
-        );
+        assert_eq!(sql, " WHERE id = '123e4567-e89b-12d3-a456-426614174000'");
         Ok(())
     }
 
@@ -1154,10 +1162,7 @@ mod tests {
         }];
 
         let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
-        assert_eq!(
-            sql,
-            " WHERE created_at > '2024-01-01 00:00:00'"
-        );
+        assert_eq!(sql, " WHERE created_at > '2024-01-01 00:00:00'");
         Ok(())
     }
 

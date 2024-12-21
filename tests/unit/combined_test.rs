@@ -2,7 +2,7 @@ use eyre::Result;
 use pg_filters::{
     filtering::{FilterCondition, FilterExpression, FilterOperator, LogicalOperator},
     sorting::{SortOrder, SortedColumn},
-    FilteringOptions, PaginationOptions, PgFilters, ColumnDef,
+    ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
 };
 use std::collections::HashMap;
 

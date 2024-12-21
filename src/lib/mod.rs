@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use eyre::Result;
+use std::collections::HashMap;
 
 pub mod filtering;
 pub mod pagination;
@@ -323,7 +323,10 @@ pub struct FilteringOptions {
 }
 
 impl FilteringOptions {
-    pub fn new(expressions: Vec<FilterExpression>, column_defs: HashMap<&'static str, ColumnDef>) -> Self {
+    pub fn new(
+        expressions: Vec<FilterExpression>,
+        column_defs: HashMap<&'static str, ColumnDef>,
+    ) -> Self {
         Self {
             expressions,
             case_insensitive: true,
@@ -331,7 +334,10 @@ impl FilteringOptions {
         }
     }
 
-    pub fn case_sensitive(expressions: Vec<FilterExpression>, column_defs: HashMap<&'static str, ColumnDef>) -> Self {
+    pub fn case_sensitive(
+        expressions: Vec<FilterExpression>,
+        column_defs: HashMap<&'static str, ColumnDef>,
+    ) -> Self {
         Self {
             expressions,
             case_insensitive: false,
@@ -339,13 +345,18 @@ impl FilteringOptions {
         }
     }
 
-    pub fn from_json_filters(filters: &[JsonFilter], column_defs: HashMap<&'static str, ColumnDef>) -> Result<Option<Self>> {
+    pub fn from_json_filters(
+        filters: &[JsonFilter],
+        column_defs: HashMap<&'static str, ColumnDef>,
+    ) -> Result<Option<Self>> {
         if filters.is_empty() {
             return Ok(None);
         }
 
         let filter_builder = FilterBuilder::from_json_filters(filters, true, &column_defs)?;
-        Ok(filter_builder.root.map(|root| Self::new(vec![root], column_defs)))
+        Ok(filter_builder
+            .root
+            .map(|root| Self::new(vec![root], column_defs)))
     }
 
     pub fn to_filter_builder(&self) -> Result<FilterBuilder> {
@@ -449,7 +460,10 @@ mod tests {
     fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
         let mut columns = HashMap::new();
         columns.insert("id", ColumnDef::Uuid("id"));
-        columns.insert("property_full_address", ColumnDef::Text("property_full_address"));
+        columns.insert(
+            "property_full_address",
+            ColumnDef::Text("property_full_address"),
+        );
         columns.insert("client_name", ColumnDef::Text("client_name"));
         columns.insert("name", ColumnDef::Text("name"));
         columns.insert("email", ColumnDef::Text("email"));
@@ -483,10 +497,7 @@ mod tests {
         ];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%'))"
@@ -519,10 +530,7 @@ mod tests {
         ];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(field1) = LOWER('value1') OR LOWER(field2) = LOWER('value2') OR LOWER(field3) = LOWER('value3'))"
@@ -555,10 +563,7 @@ mod tests {
         ];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(name) LIKE LOWER('%John%') AND (age > 18 OR LOWER(city) LIKE LOWER('%York%')))"
@@ -603,10 +608,7 @@ mod tests {
         ];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(status) = LOWER('active') AND (age > 21 OR LOWER(city) = LOWER('New York') OR LOWER(city) = LOWER('London') OR LOWER(department) = LOWER('Sales')))"
@@ -634,10 +636,7 @@ mod tests {
         }];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(sql, " WHERE LOWER(name) LIKE LOWER('%John%')");
         Ok(())
     }
@@ -661,10 +660,7 @@ mod tests {
         ];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(sql, " WHERE (age > 25 OR salary < 50000)");
         Ok(())
     }
@@ -701,10 +697,7 @@ mod tests {
 
         // Test case insensitive
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(name) LIKE LOWER('%John%') OR LOWER(email) LIKE LOWER('%gmail.com'))"
@@ -724,10 +717,7 @@ mod tests {
         }];
 
         let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
-        let sql = filtering_options
-            .unwrap()
-            .to_filter_builder()?
-            .build()?;
+        let sql = filtering_options.unwrap().to_filter_builder()?.build()?;
         assert_eq!(sql, format!(" WHERE id = '{}'", uuid));
         Ok(())
     }
