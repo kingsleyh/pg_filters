@@ -85,6 +85,21 @@ fn test_filtering_with_float() -> Result<()> {
 }
 
 #[test]
+fn test_filtering_with_uuid() -> Result<()> {
+    let sql = FilterBuilder::new()
+        .case_insensitive(true)
+        .add_condition(FilterCondition::UuidValue {
+            column: "id".to_string(),
+            operator: FilterOperator::Equal,
+            value: Some("30cbcd23-2660-44fa-a051-a13c4e2aa63a".to_string()),
+        })
+        .build()?;
+
+    assert_eq!(sql, " WHERE id = '30cbcd23-2660-44fa-a051-a13c4e2aa63a'");
+    Ok(())
+}
+
+#[test]
 fn test_filtering_with_duplicate_columns() -> Result<()> {
     let sql = FilterBuilder::new()
         .case_insensitive(true)

@@ -3,13 +3,27 @@ use chrono::NaiveDateTime;
 use pg_filters::{
     filtering::{FilterCondition, FilterExpression, FilterOperator},
     sorting::{SortOrder, SortedColumn},
-    FilteringOptions, PaginationOptions, PgFilters,
+    FilteringOptions, PaginationOptions, PgFilters, ColumnDef,
 };
 use uuid::Uuid;
+use std::collections::HashMap;
+
+fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
+    let mut columns = HashMap::new();
+    columns.insert("name", ColumnDef::Text("name"));
+    columns.insert("nickname", ColumnDef::Text("nickname"));
+    columns.insert("age", ColumnDef::Integer("age"));
+    columns.insert("capacity", ColumnDef::DoublePrecision("capacity"));
+    columns.insert("active", ColumnDef::Boolean("active"));
+    columns.insert("registration", ColumnDef::Timestamp("registration"));
+    columns.insert("uuid", ColumnDef::Uuid("uuid"));
+    columns
+}
 
 #[tokio::test]
 async fn test_logical_filters() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -27,30 +41,34 @@ async fn test_logical_filters() {
                     order: SortOrder::Asc,
                 },
             ],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "name".to_string(),
-                    operator: FilterOperator::Like,
-                    value: Some("%name1%".to_string()),
-                }),
-                FilterExpression::Condition(FilterCondition::IntegerValue {
-                    column: "age".to_string(),
-                    operator: FilterOperator::GreaterThan,
-                    value: Some(10),
-                }),
-                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
-                    column: "capacity".to_string(),
-                    operator: FilterOperator::LessThanOrEqual,
-                    value: Some(15.0),
-                }),
-                FilterExpression::Condition(FilterCondition::BooleanValue {
-                    column: "active".to_string(),
-                    operator: FilterOperator::Equal,
-                    value: Some(true),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::Like,
+                        value: Some("%name1%".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::IntegerValue {
+                        column: "age".to_string(),
+                        operator: FilterOperator::GreaterThan,
+                        value: Some(10),
+                    }),
+                    FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                        column: "capacity".to_string(),
+                        operator: FilterOperator::LessThanOrEqual,
+                        value: Some(15.0),
+                    }),
+                    FilterExpression::Condition(FilterCondition::BooleanValue {
+                        column: "active".to_string(),
+                        operator: FilterOperator::Equal,
+                        value: Some(true),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -72,12 +90,13 @@ async fn test_logical_filters() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_date_and_uuid() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -89,23 +108,27 @@ async fn test_date_and_uuid() {
                 column: "registration".to_string(),
                 order: SortOrder::Asc,
             }],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::TimestampValue {
-                    column: "registration".to_string(),
-                    operator: FilterOperator::GreaterThanOrEqual,
-                    value: Some("2023-10-10 12:00:00".to_string()),
-                }),
-                FilterExpression::Condition(FilterCondition::InValues {
-                    column: "uuid".to_string(),
-                    operator: FilterOperator::In,
-                    values: vec![
-                        "550e8400-e29b-41d4-a716-446655440001".to_string(),
-                        "550e8400-e29b-41d4-a716-446655440003".to_string(),
-                    ],
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::TimestampValue {
+                        column: "registration".to_string(),
+                        operator: FilterOperator::GreaterThanOrEqual,
+                        value: Some("2023-10-10 12:00:00".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::InValues {
+                        column: "uuid".to_string(),
+                        operator: FilterOperator::In,
+                        values: vec![
+                            "550e8400-e29b-41d4-a716-446655440001".to_string(),
+                            "550e8400-e29b-41d4-a716-446655440003".to_string(),
+                        ],
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -139,12 +162,13 @@ async fn test_date_and_uuid() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_boolean_and_capacity() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -156,20 +180,24 @@ async fn test_boolean_and_capacity() {
                 column: "capacity".to_string(),
                 order: SortOrder::Desc,
             }],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::BooleanValue {
-                    column: "active".to_string(),
-                    operator: FilterOperator::Equal,
-                    value: Some(true),
-                }),
-                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
-                    column: "capacity".to_string(),
-                    operator: FilterOperator::LessThanOrEqual,
-                    value: Some(10.0),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::BooleanValue {
+                        column: "active".to_string(),
+                        operator: FilterOperator::Equal,
+                        value: Some(true),
+                    }),
+                    FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                        column: "capacity".to_string(),
+                        operator: FilterOperator::LessThanOrEqual,
+                        value: Some(10.0),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -199,12 +227,13 @@ async fn test_boolean_and_capacity() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_name_and_age() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -222,20 +251,24 @@ async fn test_name_and_age() {
                     order: SortOrder::Desc,
                 },
             ],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "name".to_string(),
-                    operator: FilterOperator::Like,
-                    value: Some("%name%".to_string()),
-                }),
-                FilterExpression::Condition(FilterCondition::IntegerValue {
-                    column: "age".to_string(),
-                    operator: FilterOperator::GreaterThan,
-                    value: Some(5),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::Like,
+                        value: Some("%name%".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::IntegerValue {
+                        column: "age".to_string(),
+                        operator: FilterOperator::GreaterThan,
+                        value: Some(5),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -268,12 +301,13 @@ async fn test_name_and_age() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_string_int() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -291,20 +325,24 @@ async fn test_string_int() {
                     order: SortOrder::Asc,
                 },
             ],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "name".to_string(),
-                    operator: FilterOperator::Like,
-                    value: Some("%name1%".to_string()),
-                }),
-                FilterExpression::Condition(FilterCondition::IntegerValue {
-                    column: "age".to_string(),
-                    operator: FilterOperator::GreaterThan,
-                    value: Some(10),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::Like,
+                        value: Some("%name1%".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::IntegerValue {
+                        column: "age".to_string(),
+                        operator: FilterOperator::GreaterThan,
+                        value: Some(10),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -336,12 +374,13 @@ async fn test_string_int() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_float_bool() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -359,25 +398,29 @@ async fn test_float_bool() {
                     order: SortOrder::Asc,
                 },
             ],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::BooleanValue {
-                    column: "active".to_string(),
-                    operator: FilterOperator::Equal,
-                    value: Some(true),
-                }),
-                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
-                    column: "capacity".to_string(),
-                    operator: FilterOperator::GreaterThan,
-                    value: Some(2.0),
-                }),
-                FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
-                    column: "capacity".to_string(),
-                    operator: FilterOperator::LessThan,
-                    value: Some(6.0),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::BooleanValue {
+                        column: "active".to_string(),
+                        operator: FilterOperator::Equal,
+                        value: Some(true),
+                    }),
+                    FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                        column: "capacity".to_string(),
+                        operator: FilterOperator::GreaterThan,
+                        value: Some(2.0),
+                    }),
+                    FilterExpression::Condition(FilterCondition::DoublePrecisionValue {
+                        column: "capacity".to_string(),
+                        operator: FilterOperator::LessThan,
+                        value: Some(6.0),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -400,12 +443,13 @@ async fn test_float_bool() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_in() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -423,15 +467,17 @@ async fn test_in() {
                     order: SortOrder::Asc,
                 },
             ],
-            Some(FilteringOptions::new(vec![FilterExpression::Condition(
-                FilterCondition::InValues {
+            Some(FilteringOptions::new(
+                vec![FilterExpression::Condition(FilterCondition::InValues {
                     column: "age".to_string(),
                     operator: FilterOperator::In,
                     values: vec!["11".to_string(), "12".to_string(), "13".to_string()],
-                },
-            )])),
+                })],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -457,12 +503,13 @@ async fn test_in() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_starts_with() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -480,20 +527,24 @@ async fn test_starts_with() {
                     order: SortOrder::Asc,
                 },
             ],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "name".to_string(),
-                    operator: FilterOperator::StartsWith,
-                    value: Some("name1".to_string()),
-                }),
-                FilterExpression::Condition(FilterCondition::IntegerValue {
-                    column: "age".to_string(),
-                    operator: FilterOperator::GreaterThanOrEqual,
-                    value: Some(17),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::StartsWith,
+                        value: Some("name1".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::IntegerValue {
+                        column: "age".to_string(),
+                        operator: FilterOperator::GreaterThanOrEqual,
+                        value: Some(17),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -519,12 +570,13 @@ async fn test_starts_with() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }
 
 #[tokio::test]
 async fn test_text_search() {
     run_with_container(|pool| async move {
+        let columns = setup_test_columns();
         let filters = PgFilters::new(
             Some(PaginationOptions {
                 current_page: 1,
@@ -536,20 +588,24 @@ async fn test_text_search() {
                 column: "name".to_string(),
                 order: SortOrder::Asc,
             }],
-            Some(FilteringOptions::new(vec![
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "name".to_string(),
-                    operator: FilterOperator::Like,
-                    value: Some("%name%".to_string()),
-                }),
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "nickname".to_string(),
-                    operator: FilterOperator::Like,
-                    value: Some("%nickname1%".to_string()),
-                }),
-            ])),
+            Some(FilteringOptions::new(
+                vec![
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "name".to_string(),
+                        operator: FilterOperator::Like,
+                        value: Some("%name%".to_string()),
+                    }),
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "nickname".to_string(),
+                        operator: FilterOperator::Like,
+                        value: Some("%nickname1%".to_string()),
+                    }),
+                ],
+                columns.clone(),
+            )),
+            columns
         )
-        .unwrap();
+            .unwrap();
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
@@ -577,5 +633,5 @@ async fn test_text_search() {
 
         assert_eq!(rows, expected_rows);
     })
-    .await;
+        .await;
 }

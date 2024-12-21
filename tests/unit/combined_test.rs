@@ -2,11 +2,22 @@ use eyre::Result;
 use pg_filters::{
     filtering::{FilterCondition, FilterExpression, FilterOperator, LogicalOperator},
     sorting::{SortOrder, SortedColumn},
-    FilteringOptions, PaginationOptions, PgFilters,
+    FilteringOptions, PaginationOptions, PgFilters, ColumnDef,
 };
+use std::collections::HashMap;
+
+fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
+    let mut columns = HashMap::new();
+    columns.insert("name", ColumnDef::Text("name"));
+    columns.insert("age", ColumnDef::Integer("age"));
+    columns.insert("email", ColumnDef::Text("email"));
+    columns.insert("city", ColumnDef::Text("city"));
+    columns
+}
 
 #[test]
 fn test_filtering_with_sorting_with_pagination() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -18,18 +29,22 @@ fn test_filtering_with_sorting_with_pagination() -> Result<()> {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "name".to_string(),
-                operator: FilterOperator::Equal,
-                value: Some("John".to_string()),
-            }),
-            FilterExpression::Condition(FilterCondition::IntegerValue {
-                column: "age".to_string(),
-                operator: FilterOperator::GreaterThan,
-                value: Some(18),
-            }),
-        ])),
+        Some(FilteringOptions::new(
+            vec![
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some("John".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(18),
+                }),
+            ],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -42,6 +57,7 @@ fn test_filtering_with_sorting_with_pagination() -> Result<()> {
 
 #[test]
 fn test_filtering_with_case_sensitive() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -53,18 +69,22 @@ fn test_filtering_with_case_sensitive() -> Result<()> {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::case_sensitive(vec![
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "name".to_string(),
-                operator: FilterOperator::Equal,
-                value: Some("John".to_string()),
-            }),
-            FilterExpression::Condition(FilterCondition::IntegerValue {
-                column: "age".to_string(),
-                operator: FilterOperator::GreaterThan,
-                value: Some(18),
-            }),
-        ])),
+        Some(FilteringOptions::case_sensitive(
+            vec![
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some("John".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(18),
+                }),
+            ],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -77,6 +97,7 @@ fn test_filtering_with_case_sensitive() -> Result<()> {
 
 #[test]
 fn test_filtering_without_sorting_with_pagination() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -85,18 +106,22 @@ fn test_filtering_without_sorting_with_pagination() -> Result<()> {
             total_records: 1000,
         }),
         vec![],
-        Some(FilteringOptions::new(vec![
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "name".to_string(),
-                operator: FilterOperator::Equal,
-                value: Some("John".to_string()),
-            }),
-            FilterExpression::Condition(FilterCondition::IntegerValue {
-                column: "age".to_string(),
-                operator: FilterOperator::GreaterThan,
-                value: Some(18),
-            }),
-        ])),
+        Some(FilteringOptions::new(
+            vec![
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some("John".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(18),
+                }),
+            ],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -109,24 +134,29 @@ fn test_filtering_without_sorting_with_pagination() -> Result<()> {
 
 #[test]
 fn test_filtering_with_sorting_without_pagination() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         None,
         vec![SortedColumn {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "name".to_string(),
-                operator: FilterOperator::Equal,
-                value: Some("John".to_string()),
-            }),
-            FilterExpression::Condition(FilterCondition::IntegerValue {
-                column: "age".to_string(),
-                operator: FilterOperator::GreaterThan,
-                value: Some(18),
-            }),
-        ])),
+        Some(FilteringOptions::new(
+            vec![
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some("John".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(18),
+                }),
+            ],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -139,21 +169,26 @@ fn test_filtering_with_sorting_without_pagination() -> Result<()> {
 
 #[test]
 fn test_filtering_without_sorting_without_pagination() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         None,
         vec![],
-        Some(FilteringOptions::new(vec![
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "name".to_string(),
-                operator: FilterOperator::Equal,
-                value: Some("John".to_string()),
-            }),
-            FilterExpression::Condition(FilterCondition::IntegerValue {
-                column: "age".to_string(),
-                operator: FilterOperator::GreaterThan,
-                value: Some(18),
-            }),
-        ])),
+        Some(FilteringOptions::new(
+            vec![
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some("John".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(18),
+                }),
+            ],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -163,6 +198,7 @@ fn test_filtering_without_sorting_without_pagination() -> Result<()> {
 
 #[test]
 fn test_filtering_with_sorting_with_pagination_with_empty_filters() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -174,7 +210,8 @@ fn test_filtering_with_sorting_with_pagination_with_empty_filters() -> Result<()
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![])),
+        Some(FilteringOptions::new(vec![], columns.clone())),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -184,6 +221,7 @@ fn test_filtering_with_sorting_with_pagination_with_empty_filters() -> Result<()
 
 #[test]
 fn test_filtering_without_sorting_with_pagination_with_empty_filters() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -192,7 +230,8 @@ fn test_filtering_without_sorting_with_pagination_with_empty_filters() -> Result
             total_records: 1000,
         }),
         vec![],
-        Some(FilteringOptions::new(vec![])),
+        Some(FilteringOptions::new(vec![], columns.clone())),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -202,13 +241,15 @@ fn test_filtering_without_sorting_with_pagination_with_empty_filters() -> Result
 
 #[test]
 fn test_filtering_with_sorting_without_pagination_with_empty_filters() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         None,
         vec![SortedColumn {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![])),
+        Some(FilteringOptions::new(vec![], columns.clone())),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -218,7 +259,13 @@ fn test_filtering_with_sorting_without_pagination_with_empty_filters() -> Result
 
 #[test]
 fn test_filtering_without_sorting_without_pagination_with_empty_filters() -> Result<()> {
-    let filters = PgFilters::new(None, vec![], Some(FilteringOptions::new(vec![])))?;
+    let columns = setup_test_columns();
+    let filters = PgFilters::new(
+        None,
+        vec![],
+        Some(FilteringOptions::new(vec![], columns.clone())),
+        columns,
+    )?;
 
     let sql = filters.sql()?;
     assert_eq!(sql, "");
@@ -227,6 +274,7 @@ fn test_filtering_without_sorting_without_pagination_with_empty_filters() -> Res
 
 #[test]
 fn test_with_many_filters_and_many_sorting_and_pagination() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -244,23 +292,27 @@ fn test_with_many_filters_and_many_sorting_and_pagination() -> Result<()> {
                 order: SortOrder::Desc,
             },
         ],
-        Some(FilteringOptions::new(vec![
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "name".to_string(),
-                operator: FilterOperator::Equal,
-                value: Some("John".to_string()),
-            }),
-            FilterExpression::Condition(FilterCondition::IntegerValue {
-                column: "age".to_string(),
-                operator: FilterOperator::GreaterThan,
-                value: Some(18),
-            }),
-            FilterExpression::Condition(FilterCondition::TextValue {
-                column: "email".to_string(),
-                operator: FilterOperator::Like,
-                value: Some("%gmail.com%".to_string()),
-            }),
-        ])),
+        Some(FilteringOptions::new(
+            vec![
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "name".to_string(),
+                    operator: FilterOperator::Equal,
+                    value: Some("John".to_string()),
+                }),
+                FilterExpression::Condition(FilterCondition::IntegerValue {
+                    column: "age".to_string(),
+                    operator: FilterOperator::GreaterThan,
+                    value: Some(18),
+                }),
+                FilterExpression::Condition(FilterCondition::TextValue {
+                    column: "email".to_string(),
+                    operator: FilterOperator::Like,
+                    value: Some("%gmail.com%".to_string()),
+                }),
+            ],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;
@@ -273,6 +325,7 @@ fn test_with_many_filters_and_many_sorting_and_pagination() -> Result<()> {
 
 #[test]
 fn test_complex_filtering_with_and_or_conditions() -> Result<()> {
+    let columns = setup_test_columns();
     let filters = PgFilters::new(
         Some(PaginationOptions {
             current_page: 1,
@@ -284,31 +337,35 @@ fn test_complex_filtering_with_and_or_conditions() -> Result<()> {
             column: "name".to_string(),
             order: SortOrder::Asc,
         }],
-        Some(FilteringOptions::new(vec![FilterExpression::Group {
-            operator: LogicalOperator::Or,
-            expressions: vec![
-                FilterExpression::Group {
-                    operator: LogicalOperator::And,
-                    expressions: vec![
-                        FilterExpression::Condition(FilterCondition::TextValue {
-                            column: "name".to_string(),
-                            operator: FilterOperator::Equal,
-                            value: Some("John".to_string()),
-                        }),
-                        FilterExpression::Condition(FilterCondition::IntegerValue {
-                            column: "age".to_string(),
-                            operator: FilterOperator::GreaterThan,
-                            value: Some(18),
-                        }),
-                    ],
-                },
-                FilterExpression::Condition(FilterCondition::TextValue {
-                    column: "city".to_string(),
-                    operator: FilterOperator::In,
-                    value: Some("New York,London".to_string()),
-                }),
-            ],
-        }])),
+        Some(FilteringOptions::new(
+            vec![FilterExpression::Group {
+                operator: LogicalOperator::Or,
+                expressions: vec![
+                    FilterExpression::Group {
+                        operator: LogicalOperator::And,
+                        expressions: vec![
+                            FilterExpression::Condition(FilterCondition::TextValue {
+                                column: "name".to_string(),
+                                operator: FilterOperator::Equal,
+                                value: Some("John".to_string()),
+                            }),
+                            FilterExpression::Condition(FilterCondition::IntegerValue {
+                                column: "age".to_string(),
+                                operator: FilterOperator::GreaterThan,
+                                value: Some(18),
+                            }),
+                        ],
+                    },
+                    FilterExpression::Condition(FilterCondition::TextValue {
+                        column: "city".to_string(),
+                        operator: FilterOperator::In,
+                        value: Some("New York,London".to_string()),
+                    }),
+                ],
+            }],
+            columns.clone(),
+        )),
+        columns,
     )?;
 
     let sql = filters.sql()?;

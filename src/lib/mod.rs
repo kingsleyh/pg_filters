@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use eyre::Result;
 
 pub mod filtering;
@@ -318,30 +319,33 @@ impl PaginationOptions {
 pub struct FilteringOptions {
     pub expressions: Vec<FilterExpression>,
     pub case_insensitive: bool,
+    pub column_defs: HashMap<&'static str, ColumnDef>,
 }
 
 impl FilteringOptions {
-    pub fn new(expressions: Vec<FilterExpression>) -> Self {
+    pub fn new(expressions: Vec<FilterExpression>, column_defs: HashMap<&'static str, ColumnDef>) -> Self {
         Self {
             expressions,
             case_insensitive: true,
+            column_defs,
         }
     }
 
-    pub fn case_sensitive(expressions: Vec<FilterExpression>) -> Self {
+    pub fn case_sensitive(expressions: Vec<FilterExpression>, column_defs: HashMap<&'static str, ColumnDef>) -> Self {
         Self {
             expressions,
             case_insensitive: false,
+            column_defs,
         }
     }
 
-    pub fn from_json_filters(filters: &[JsonFilter]) -> Result<Option<Self>> {
+    pub fn from_json_filters(filters: &[JsonFilter], column_defs: HashMap<&'static str, ColumnDef>) -> Result<Option<Self>> {
         if filters.is_empty() {
             return Ok(None);
         }
 
-        let filter_builder = FilterBuilder::from_json_filters(filters, true)?;
-        Ok(filter_builder.root.map(|root| Self::new(vec![root])))
+        let filter_builder = FilterBuilder::from_json_filters(filters, true, &column_defs)?;
+        Ok(filter_builder.root.map(|root| Self::new(vec![root], column_defs)))
     }
 
     pub fn to_filter_builder(&self) -> Result<FilterBuilder> {
@@ -359,10 +363,11 @@ impl FilteringOptions {
 
     pub fn try_from_expressions(
         expressions: Vec<Result<FilterExpression, eyre::Error>>,
+        column_defs: HashMap<&'static str, ColumnDef>,
     ) -> Result<Option<Self>> {
         let expressions: Result<Vec<_>, _> = expressions.into_iter().collect();
         match expressions {
-            Ok(exprs) if !exprs.is_empty() => Ok(Some(Self::new(exprs))),
+            Ok(exprs) if !exprs.is_empty() => Ok(Some(Self::new(exprs, column_defs))),
             Ok(_) => Ok(None),
             Err(e) => Err(e),
         }
@@ -374,6 +379,7 @@ pub struct PgFilters {
     pub pagination: Option<Paginate>,
     pub sorting: Option<Sorting>,
     pub filters: Option<FilterBuilder>,
+    pub column_defs: HashMap<&'static str, ColumnDef>,
 }
 
 impl PgFilters {
@@ -381,6 +387,7 @@ impl PgFilters {
         pagination: Option<PaginationOptions>,
         sorting_columns: Vec<SortedColumn>,
         filtering_options: Option<FilteringOptions>,
+        column_defs: HashMap<&'static str, ColumnDef>,
     ) -> Result<PgFilters> {
         let pagination = pagination.map(|pagination| {
             Paginate::new(
@@ -403,6 +410,7 @@ impl PgFilters {
             pagination,
             sorting: Some(sorting),
             filters,
+            column_defs,
         })
     }
 
@@ -438,8 +446,27 @@ impl PgFilters {
 mod tests {
     use super::*;
 
+    fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
+        let mut columns = HashMap::new();
+        columns.insert("id", ColumnDef::Uuid("id"));
+        columns.insert("property_full_address", ColumnDef::Text("property_full_address"));
+        columns.insert("client_name", ColumnDef::Text("client_name"));
+        columns.insert("name", ColumnDef::Text("name"));
+        columns.insert("email", ColumnDef::Text("email"));
+        columns.insert("age", ColumnDef::Integer("age"));
+        columns.insert("salary", ColumnDef::Integer("salary"));
+        columns.insert("status", ColumnDef::Text("status"));
+        columns.insert("city", ColumnDef::Text("city"));
+        columns.insert("department", ColumnDef::Text("department"));
+        columns.insert("field1", ColumnDef::Text("field1"));
+        columns.insert("field2", ColumnDef::Text("field2"));
+        columns.insert("field3", ColumnDef::Text("field3"));
+        columns
+    }
+
     #[test]
     fn test_or_conditions() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![
             JsonFilter {
                 n: "property_full_address".to_string(),
@@ -455,7 +482,11 @@ mod tests {
             },
         ];
 
-        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(property_full_address) LIKE LOWER('%James%') OR LOWER(client_name) LIKE LOWER('%James%'))"
@@ -465,6 +496,7 @@ mod tests {
 
     #[test]
     fn test_multiple_or_conditions() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![
             JsonFilter {
                 n: "field1".to_string(),
@@ -486,7 +518,11 @@ mod tests {
             },
         ];
 
-        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(field1) = LOWER('value1') OR LOWER(field2) = LOWER('value2') OR LOWER(field3) = LOWER('value3'))"
@@ -496,6 +532,7 @@ mod tests {
 
     #[test]
     fn test_mixed_and_or_conditions() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![
             JsonFilter {
                 n: "name".to_string(),
@@ -517,7 +554,11 @@ mod tests {
             },
         ];
 
-        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(name) LIKE LOWER('%John%') AND (age > 18 OR LOWER(city) LIKE LOWER('%York%')))"
@@ -527,6 +568,7 @@ mod tests {
 
     #[test]
     fn test_complex_and_or_pattern() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![
             JsonFilter {
                 n: "status".to_string(),
@@ -560,7 +602,11 @@ mod tests {
             },
         ];
 
-        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(
             sql,
             " WHERE (LOWER(status) = LOWER('active') AND (age > 21 OR LOWER(city) = LOWER('New York') OR LOWER(city) = LOWER('London') OR LOWER(department) = LOWER('Sales')))"
@@ -570,14 +616,16 @@ mod tests {
 
     #[test]
     fn test_empty_filters() -> Result<()> {
+        let columns = setup_test_columns();
         let filters: Vec<JsonFilter> = vec![];
-        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
-        assert_eq!(sql, "");
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        assert!(filtering_options.is_none());
         Ok(())
     }
 
     #[test]
     fn test_single_filter() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![JsonFilter {
             n: "name".to_string(),
             f: "LIKE".to_string(),
@@ -585,13 +633,18 @@ mod tests {
             c: None,
         }];
 
-        let sql = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(sql, " WHERE LOWER(name) LIKE LOWER('%John%')");
         Ok(())
     }
 
     #[test]
     fn test_numeric_conditions() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![
             JsonFilter {
                 n: "age".to_string(),
@@ -607,13 +660,18 @@ mod tests {
             },
         ];
 
-        let sql = FilterBuilder::from_json_filters(&filters, false)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(sql, " WHERE (age > 25 OR salary < 50000)");
         Ok(())
     }
 
     #[test]
     fn test_case_sensitivity() -> Result<()> {
+        let columns = setup_test_columns();
         let filters = vec![
             JsonFilter {
                 n: "name".to_string(),
@@ -630,18 +688,47 @@ mod tests {
         ];
 
         // Test case sensitive
-        let sql_sensitive = FilterBuilder::from_json_filters(&filters, false)?.build()?;
-        assert_eq!(
-            sql_sensitive,
-            " WHERE (name LIKE '%John%' OR email LIKE '%gmail.com')"
+        let filtering_options = FilteringOptions::case_sensitive(
+            vec![FilterExpression::Condition(FilterCondition::text(
+                "name",
+                FilterOperator::Like,
+                Some("%John%"),
+            ))],
+            columns.clone(),
         );
+        let sql = filtering_options.to_filter_builder()?.build()?;
+        assert_eq!(sql, " WHERE name LIKE '%John%'");
 
         // Test case insensitive
-        let sql_insensitive = FilterBuilder::from_json_filters(&filters, true)?.build()?;
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
         assert_eq!(
-            sql_insensitive,
+            sql,
             " WHERE (LOWER(name) LIKE LOWER('%John%') OR LOWER(email) LIKE LOWER('%gmail.com'))"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_uuid_filter() -> Result<()> {
+        let columns = setup_test_columns();
+        let uuid = "123e4567-e89b-12d3-a456-426614174000";
+        let filters = vec![JsonFilter {
+            n: "id".to_string(),
+            f: "=".to_string(),
+            v: uuid.to_string(),
+            c: None,
+        }];
+
+        let filtering_options = FilteringOptions::from_json_filters(&filters, columns)?;
+        let sql = filtering_options
+            .unwrap()
+            .to_filter_builder()?
+            .build()?;
+        assert_eq!(sql, format!(" WHERE id = '{}'", uuid));
         Ok(())
     }
 }
