@@ -211,6 +211,7 @@ let filters = PgFilters::new(
 * TimestampTz - TIMESTAMP WITH TIME ZONE columns
 * Uuid - UUID columns (case-sensitive comparison)
 * Json/Jsonb - JSON and JSONB columns
+* TextArray - TEXT[] array columns
 * And many more (see documentation for full list)
 
 ## Valid Filtering Operators
@@ -235,6 +236,64 @@ Can be upper or lower case:
 * "IS NOT NULL"
 * "STARTS WITH"
 * "ENDS WITH"
+* "CONTAINS" (for array types)
+* "OVERLAPS" (for array types)
+
+### Array Filtering
+
+PG Filters supports filtering on PostgreSQL array columns. Here's how to use array filtering:
+
+```rust
+let columns = setup_columns();
+columns.insert("services", ColumnDef::TextArray("services"));
+
+// Using JSON filters:
+
+// Find records where services array contains ALL specified values
+let contains_filter = JsonFilter {
+    n: "services".to_string(),
+    f: "CONTAINS".to_string(),
+    v: "EPC,Search".to_string(),
+    c: None,
+};
+
+// Find records where services array contains ANY of the specified values
+let overlaps_filter = JsonFilter {
+    n: "services".to_string(),
+    f: "OVERLAPS".to_string(),
+    v: "EPC,Search".to_string(),
+    c: None,
+};
+
+// Using direct conditions:
+let contains_condition = FilterExpression::Condition(FilterCondition::ArrayContains {
+    column: "services".to_string(),
+    operator: FilterOperator::Contains,
+    value: "EPC,Search".to_string(),
+});
+
+let overlaps_condition = FilterExpression::Condition(FilterCondition::ArrayOverlap {
+    column: "services".to_string(),
+    operator: FilterOperator::Overlaps,
+    values: vec!["EPC".to_string(), "Search".to_string()],
+});
+```
+
+Array filtering supports two operations:
+* CONTAINS (@>) - Finds records where the array column contains ALL specified values
+* OVERLAPS (&&) - Finds records where the array column contains ANY of the specified values
+
+Note: Array operations are case-sensitive and perform exact matching.
+
+### Array Filtering SQL Examples
+
+```sql
+-- CONTAINS: Find all records where services include both 'EPC' and 'Search'
+services @> ARRAY['EPC','Search']::text[]
+
+-- OVERLAPS: Find all records where services include either 'EPC' or 'Search'
+services && ARRAY['EPC','Search']::text[]
+```
 
 ### Case Sensitivity
 
