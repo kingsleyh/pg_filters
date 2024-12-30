@@ -49,6 +49,9 @@ pub enum ColumnDef {
     Json(&'static str),
     Jsonb(&'static str),
 
+    // Text Array
+    TextArray(&'static str),
+
     // Binary Data
     ByteA(&'static str),
 
@@ -76,6 +79,8 @@ impl ColumnDef {
             "IS NOT NULL" => FilterOperator::IsNotNull,
             "STARTS WITH" => FilterOperator::StartsWith,
             "ENDS WITH" => FilterOperator::EndsWith,
+            "CONTAINS" => FilterOperator::Contains,
+            "OVERLAPS" => FilterOperator::Overlaps,
             _ => return Err(eyre::eyre!("Invalid operator: {}", operator)),
         };
 
@@ -105,6 +110,32 @@ impl ColumnDef {
                         Some(value.to_string())
                     },
                 })
+            }
+
+            // Text Array types
+            ColumnDef::TextArray(name) => {
+                match op {
+                    FilterOperator::Contains => Ok(FilterCondition::ArrayContains {
+                        column: name.to_string(),
+                        operator: op,
+                        value: value.to_string(),
+                        ignore_case_sensitivity: true, // Set to true for array operations
+                    }),
+                    FilterOperator::Overlaps => {
+                        Ok(FilterCondition::ArrayOverlap {
+                            column: name.to_string(),
+                            operator: op,
+                            values: value.split(',').map(|s| s.trim().to_string()).collect(),
+                            ignore_case_sensitivity: true, // Set to true for array operations
+                        })
+                    }
+                    _ => Ok(FilterCondition::ArrayContains {
+                        column: name.to_string(),
+                        operator: FilterOperator::Contains,
+                        value: value.to_string(),
+                        ignore_case_sensitivity: true, // Set to true for array operations
+                    }),
+                }
             }
 
             // Numeric Types
@@ -289,6 +320,7 @@ impl ColumnDef {
             | ColumnDef::Uuid(name)
             | ColumnDef::Json(name)
             | ColumnDef::Jsonb(name)
+            | ColumnDef::TextArray(name)
             | ColumnDef::ByteA(name)
             | ColumnDef::Money(name)
             | ColumnDef::Xml(name) => name.to_string(),

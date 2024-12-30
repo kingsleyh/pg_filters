@@ -46,6 +46,8 @@ pub enum FilterOperator {
     IsNotNull,
     StartsWith,
     EndsWith,
+    Contains,
+    Overlaps,
 }
 
 impl FilterOperator {
@@ -65,6 +67,8 @@ impl FilterOperator {
             FilterOperator::IsNotNull => "IS NOT NULL",
             FilterOperator::StartsWith => "LIKE",
             FilterOperator::EndsWith => "LIKE",
+            FilterOperator::Contains => "@>",
+            FilterOperator::Overlaps => "&&",
         }
     }
 
@@ -306,6 +310,20 @@ pub enum FilterCondition {
         value: Option<String>,
     },
 
+    // Text Array Types
+    ArrayContains {
+        column: String,
+        operator: FilterOperator,
+        value: String,
+        ignore_case_sensitivity: bool, // New field
+    },
+    ArrayOverlap {
+        column: String,
+        operator: FilterOperator,
+        values: Vec<String>,
+        ignore_case_sensitivity: bool, // New field
+    },
+
     // Binary Data
     ByteAValue {
         column: String,
@@ -389,6 +407,54 @@ impl FilterCondition {
                 }
                 None => Ok(format!("{} {}", column, operator.as_sql())),
             },
+
+            FilterCondition::ArrayContains {
+                column,
+                operator: _,
+                value,
+                ignore_case_sensitivity,
+            } => {
+                // Only proceed with normal SQL generation if ignore_case_sensitivity is true
+                if *ignore_case_sensitivity {
+                    let values = value
+                        .split(',')
+                        .map(|v| format!("'{}'", v.trim().replace('\'', "''")))
+                        .collect::<Vec<_>>()
+                        .join(",");
+                    Ok(format!("{} @> ARRAY[{}]::text[]", column, values))
+                } else if case_insensitive {
+                    Ok(format!(
+                        "LOWER({}) @> LOWER('{}')",
+                        column,
+                        value.replace('\'', "''")
+                    ))
+                } else {
+                    Ok(format!("{} @> '{}'", column, value.replace('\'', "''")))
+                }
+            }
+            FilterCondition::ArrayOverlap {
+                column,
+                operator: _,
+                values,
+                ignore_case_sensitivity,
+            } => {
+                if *ignore_case_sensitivity {
+                    let formatted_values = values
+                        .iter()
+                        .map(|v| format!("'{}'", v.replace('\'', "''")))
+                        .collect::<Vec<_>>()
+                        .join(",");
+                    Ok(format!("{} && ARRAY[{}]::text[]", column, formatted_values))
+                } else if case_insensitive {
+                    Ok(format!(
+                        "LOWER({}) && LOWER('{}')",
+                        column,
+                        values.join(",")
+                    ))
+                } else {
+                    Ok(format!("{} && '{}'", column, values.join(",")))
+                }
+            }
 
             // Never apply case sensitivity to non-text types
             FilterCondition::UuidValue {
@@ -690,6 +756,26 @@ impl FilterBuilder {
             column_defs: &HashMap<&str, ColumnDef>,
         ) -> FilterCondition {
             match column_defs.get(filter.n.as_str()) {
+                Some(ColumnDef::TextArray(_)) => match filter.f.to_uppercase().as_str() {
+                    "CONTAINS" => FilterCondition::ArrayContains {
+                        column: filter.n.clone(),
+                        operator: FilterOperator::Contains,
+                        value: filter.v.clone(),
+                        ignore_case_sensitivity: true,
+                    },
+                    "OVERLAPS" => FilterCondition::ArrayOverlap {
+                        column: filter.n.clone(),
+                        operator: FilterOperator::Overlaps,
+                        values: filter.v.split(',').map(|s| s.trim().to_string()).collect(),
+                        ignore_case_sensitivity: true,
+                    },
+                    _ => FilterCondition::ArrayContains {
+                        column: filter.n.clone(),
+                        operator: FilterOperator::Contains,
+                        value: filter.v.clone(),
+                        ignore_case_sensitivity: true,
+                    },
+                },
                 Some(ColumnDef::Uuid(_)) => {
                     FilterCondition::uuid(&filter.n, parse_operator(&filter.f), Some(&filter.v))
                 }
@@ -837,6 +923,8 @@ fn parse_operator(op: &str) -> FilterOperator {
         "IS NOT NULL" => FilterOperator::IsNotNull,
         "STARTS WITH" => FilterOperator::StartsWith,
         "ENDS WITH" => FilterOperator::EndsWith,
+        "CONTAINS" => FilterOperator::Contains,
+        "OVERLAPS" => FilterOperator::Overlaps,
         _ => FilterOperator::Equal,
     }
 }
@@ -1179,6 +1267,140 @@ mod tests {
         // Should default to text handling for unknown columns
         let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
         assert_eq!(sql, " WHERE LOWER(unknown_column) = LOWER('test')");
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_array_contains() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("services", ColumnDef::TextArray("services"));
+
+        // Test single value contains
+        let filters = vec![JsonFilter {
+            n: "services".to_string(),
+            f: "CONTAINS".to_string(),
+            v: "EPC".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE services @> ARRAY['EPC']::text[]");
+
+        // Test multiple values contains
+        let filters = vec![JsonFilter {
+            n: "services".to_string(),
+            f: "CONTAINS".to_string(),
+            v: "EPC,Search".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE services @> ARRAY['EPC','Search']::text[]");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_array_overlaps() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("services", ColumnDef::TextArray("services"));
+
+        // Test single value overlaps
+        let filters = vec![JsonFilter {
+            n: "services".to_string(),
+            f: "OVERLAPS".to_string(),
+            v: "EPC".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE services && ARRAY['EPC']::text[]");
+
+        // Test multiple values overlaps
+        let filters = vec![JsonFilter {
+            n: "services".to_string(),
+            f: "OVERLAPS".to_string(),
+            v: "EPC,Search".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE services && ARRAY['EPC','Search']::text[]");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_array_with_complex_conditions() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("services", ColumnDef::TextArray("services"));
+
+        let filters = vec![
+            JsonFilter {
+                n: "services".to_string(),
+                f: "CONTAINS".to_string(),
+                v: "EPC".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "status".to_string(),
+                f: "=".to_string(),
+                v: "active".to_string(),
+                c: Some("AND".to_string()),
+            },
+            JsonFilter {
+                n: "services".to_string(),
+                f: "OVERLAPS".to_string(),
+                v: "Search,Valuation".to_string(),
+                c: Some("OR".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE (services @> ARRAY['EPC']::text[] AND (LOWER(status) = LOWER('active') OR services && ARRAY['Search','Valuation']::text[]))"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_array_with_special_characters() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("services", ColumnDef::TextArray("services"));
+
+        let filters = vec![JsonFilter {
+            n: "services".to_string(),
+            f: "CONTAINS".to_string(),
+            v: "EPC's,Search & Valuation".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE services @> ARRAY['EPC''s','Search & Valuation']::text[]"
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_text_array_empty_value() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("services", ColumnDef::TextArray("services"));
+
+        let filters = vec![JsonFilter {
+            n: "services".to_string(),
+            f: "CONTAINS".to_string(),
+            v: "".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE services @> ARRAY['']::text[]");
+
         Ok(())
     }
 }
