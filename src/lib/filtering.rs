@@ -315,13 +315,11 @@ pub enum FilterCondition {
         column: String,
         operator: FilterOperator,
         value: String,
-        ignore_case_sensitivity: bool, // New field
     },
     ArrayOverlap {
         column: String,
         operator: FilterOperator,
         values: Vec<String>,
-        ignore_case_sensitivity: bool, // New field
     },
 
     // Binary Data
@@ -412,48 +410,25 @@ impl FilterCondition {
                 column,
                 operator: _,
                 value,
-                ignore_case_sensitivity,
             } => {
-                // Only proceed with normal SQL generation if ignore_case_sensitivity is true
-                if *ignore_case_sensitivity {
-                    let values = value
-                        .split(',')
-                        .map(|v| format!("'{}'", v.trim().replace('\'', "''")))
-                        .collect::<Vec<_>>()
-                        .join(",");
-                    Ok(format!("{} @> ARRAY[{}]::text[]", column, values))
-                } else if case_insensitive {
-                    Ok(format!(
-                        "LOWER({}) @> LOWER('{}')",
-                        column,
-                        value.replace('\'', "''")
-                    ))
-                } else {
-                    Ok(format!("{} @> '{}'", column, value.replace('\'', "''")))
-                }
+                let values = value
+                    .split(',')
+                    .map(|v| format!("'{}'", v.trim().replace('\'', "''")))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                Ok(format!("{} @> ARRAY[{}]::text[]", column, values))
             }
             FilterCondition::ArrayOverlap {
                 column,
                 operator: _,
                 values,
-                ignore_case_sensitivity,
             } => {
-                if *ignore_case_sensitivity {
-                    let formatted_values = values
-                        .iter()
-                        .map(|v| format!("'{}'", v.replace('\'', "''")))
-                        .collect::<Vec<_>>()
-                        .join(",");
-                    Ok(format!("{} && ARRAY[{}]::text[]", column, formatted_values))
-                } else if case_insensitive {
-                    Ok(format!(
-                        "LOWER({}) && LOWER('{}')",
-                        column,
-                        values.join(",")
-                    ))
-                } else {
-                    Ok(format!("{} && '{}'", column, values.join(",")))
-                }
+                let formatted_values = values
+                    .iter()
+                    .map(|v| format!("'{}'", v.replace('\'', "''")))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                Ok(format!("{} && ARRAY[{}]::text[]", column, formatted_values))
             }
 
             // Never apply case sensitivity to non-text types
@@ -761,19 +736,16 @@ impl FilterBuilder {
                         column: filter.n.clone(),
                         operator: FilterOperator::Contains,
                         value: filter.v.clone(),
-                        ignore_case_sensitivity: true,
                     },
                     "OVERLAPS" => FilterCondition::ArrayOverlap {
                         column: filter.n.clone(),
                         operator: FilterOperator::Overlaps,
                         values: filter.v.split(',').map(|s| s.trim().to_string()).collect(),
-                        ignore_case_sensitivity: true,
                     },
                     _ => FilterCondition::ArrayContains {
                         column: filter.n.clone(),
                         operator: FilterOperator::Contains,
                         value: filter.v.clone(),
-                        ignore_case_sensitivity: true,
                     },
                 },
                 Some(ColumnDef::Uuid(_)) => {

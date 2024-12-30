@@ -113,30 +113,23 @@ impl ColumnDef {
             }
 
             // Text Array types
-            ColumnDef::TextArray(name) => {
-                match op {
-                    FilterOperator::Contains => Ok(FilterCondition::ArrayContains {
-                        column: name.to_string(),
-                        operator: op,
-                        value: value.to_string(),
-                        ignore_case_sensitivity: true, // Set to true for array operations
-                    }),
-                    FilterOperator::Overlaps => {
-                        Ok(FilterCondition::ArrayOverlap {
-                            column: name.to_string(),
-                            operator: op,
-                            values: value.split(',').map(|s| s.trim().to_string()).collect(),
-                            ignore_case_sensitivity: true, // Set to true for array operations
-                        })
-                    }
-                    _ => Ok(FilterCondition::ArrayContains {
-                        column: name.to_string(),
-                        operator: FilterOperator::Contains,
-                        value: value.to_string(),
-                        ignore_case_sensitivity: true, // Set to true for array operations
-                    }),
-                }
-            }
+            ColumnDef::TextArray(name) => match op {
+                FilterOperator::Contains => Ok(FilterCondition::ArrayContains {
+                    column: name.to_string(),
+                    operator: op,
+                    value: value.to_string(),
+                }),
+                FilterOperator::Overlaps => Ok(FilterCondition::ArrayOverlap {
+                    column: name.to_string(),
+                    operator: op,
+                    values: value.split(',').map(|s| s.trim().to_string()).collect(),
+                }),
+                _ => Ok(FilterCondition::ArrayContains {
+                    column: name.to_string(),
+                    operator: FilterOperator::Contains,
+                    value: value.to_string(),
+                }),
+            },
 
             // Numeric Types
             ColumnDef::SmallInt(name) => Ok(FilterCondition::SmallIntValue {
