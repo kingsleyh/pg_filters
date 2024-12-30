@@ -220,24 +220,61 @@ The filtering supports various operators for different column types:
 
 ### Filtering Operators
 
-Can be upper or lower case:
+All operators can be upper or lower case. Here are the supported operators by type:
 
-* "="
-* "!="
-* ">"
-* ">="
-* "<"
-* "<="
-* "LIKE"
-* "NOT LIKE"
-* "IN"
-* "NOT IN"
-* "IS NULL"
-* "IS NOT NULL"
-* "STARTS WITH"
-* "ENDS WITH"
-* "CONTAINS" (for array types)
-* "OVERLAPS" (for array types)
+#### Standard Comparison Operators
+* "=" - Equal to
+* "!=" - Not equal to
+* ">" - Greater than
+* ">=" - Greater than or equal to
+* "<" - Less than
+* "<=" - Less than or equal to
+
+#### Text Search Operators
+* "LIKE" - Pattern matching
+* "NOT LIKE" - Negative pattern matching
+* "STARTS WITH" - Starts with pattern
+* "ENDS WITH" - Ends with pattern
+
+#### Null Check Operators
+* "IS NULL" - Check for null values
+* "IS NOT NULL" - Check for non-null values
+
+#### Collection Operators
+* "IN" - Value in list
+* "NOT IN" - Value not in list
+
+#### Array Operators
+* "CONTAINS" - Array contains all specified values (@>)
+* "OVERLAPS" - Array contains any of specified values (&&)
+
+#### Date Operators
+* "DATE_ONLY" - Match entire day
+* "DATE_RANGE" - Match date range (requires start,end format)
+* "RELATIVE" - Use relative date expression
+
+Example usage for each operator type:
+```rust
+// Standard comparison
+"f": "=", "v": "value"
+
+// Text search
+"f": "LIKE", "v": "%pattern%"
+
+// Null check
+"f": "IS NULL", "v": ""
+
+// Collection
+"f": "IN", "v": "value1,value2,value3"
+
+// Array
+"f": "CONTAINS", "v": "item1,item2"
+
+// Date
+"f": "DATE_ONLY", "v": "2024-12-29"
+"f": "DATE_RANGE", "v": "2024-12-29 00:00:00,2024-12-29 23:59:59"
+"f": "RELATIVE", "v": "now() - interval '1 day'"
+```
 
 ### Array Filtering
 
@@ -293,6 +330,114 @@ services @> ARRAY['EPC','Search']::text[]
 
 -- OVERLAPS: Find all records where services include either 'EPC' or 'Search'
 services && ARRAY['EPC','Search']::text[]
+```
+
+### Date Filtering
+
+PG Filters provides sophisticated date filtering capabilities with support for exact timestamps, date-only matching, ranges, and relative dates.
+
+```rust
+let columns = setup_columns();
+
+// Using JSON filters:
+
+// 1. Exact timestamp matching
+let exact_filter = JsonFilter {
+    n: "created_at".to_string(),
+    f: "=".to_string(),
+    v: "2024-12-29 15:30:00".to_string(),
+    c: None,
+};
+
+// 2. Date-only matching (matches full day)
+let date_only_filter = JsonFilter {
+    n: "created_at".to_string(),
+    f: "DATE_ONLY".to_string(),
+    v: "2024-12-29".to_string(),
+    c: None,
+};
+
+// 3. Date range matching
+let range_filter = JsonFilter {
+    n: "created_at".to_string(),
+    f: "DATE_RANGE".to_string(),
+    v: "2024-12-29 00:00:00,2024-12-29 23:59:59".to_string(),
+    c: None,
+};
+
+// 4. Relative date matching
+let relative_filter = JsonFilter {
+    n: "created_at".to_string(),
+    f: "RELATIVE".to_string(),
+    v: "now() - interval '1 day'".to_string(),
+    c: None,
+};
+
+// Using direct conditions:
+let date_only_condition = FilterCondition::date_only(
+    "created_at",
+    "2024-12-29"
+);
+
+let range_condition = FilterCondition::date_range(
+    "created_at",
+    "2024-12-29 00:00:00",
+    "2024-12-29 23:59:59"
+);
+
+let relative_condition = FilterCondition::relative_date(
+    "created_at",
+    "now() - interval '1 day'"
+);
+```
+
+Date filtering supports several operations:
+* `DATE_ONLY` - Matches an entire day (from 00:00:00 to 23:59:59)
+* `DATE_RANGE` - Custom date range with start and end timestamps
+* `RELATIVE` - PostgreSQL relative date expressions
+* Standard operators (`=`, `>`, `<`, etc.) - For exact timestamp matching
+
+### Date Filtering SQL Examples
+
+```sql
+-- Exact timestamp match
+created_at = '2024-12-29 15:30:00'
+
+-- Date-only match (entire day)
+created_at >= '2024-12-29 00:00:00' AND created_at < ('2024-12-29')::date + interval '1 day'
+
+-- Date range
+created_at BETWEEN '2024-12-29 00:00:00' AND '2024-12-29 23:59:59'
+
+-- Relative date
+created_at > now() - interval '1 day'
+```
+
+### Common Relative Date Expressions
+
+You can use PostgreSQL's interval syntax for relative dates:
+
+```rust
+// Last hour
+"now() - interval '1 hour'"
+
+// Last 24 hours
+"now() - interval '24 hours'"
+
+// Last 7 days
+"now() - interval '7 days'"
+
+// Last month
+"now() - interval '1 month'"
+
+// Start of current day
+"date_trunc('day', now())"
+
+// Start of current week
+"date_trunc('week', now())"
+
+// Start of current month
+"date_trunc('month', now())"
 ```
 
 ### Case Sensitivity

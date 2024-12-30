@@ -48,6 +48,9 @@ pub enum FilterOperator {
     EndsWith,
     Contains,
     Overlaps,
+    DateEqual,
+    DateRange,
+    RelativeDate,
 }
 
 impl FilterOperator {
@@ -69,6 +72,9 @@ impl FilterOperator {
             FilterOperator::EndsWith => "LIKE",
             FilterOperator::Contains => "@>",
             FilterOperator::Overlaps => "&&",
+            FilterOperator::DateEqual => "=",
+            FilterOperator::DateRange => "BETWEEN",
+            FilterOperator::RelativeDate => ">",
         }
     }
 
@@ -178,6 +184,18 @@ impl fmt::Display for FilterExpression {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum DateRangeType {
+    /// Exact timestamp match
+    Exact(String),
+    /// Match entire day
+    DateOnly(String),
+    /// Custom date range
+    Range { start: String, end: String },
+    /// Relative date expression
+    Relative(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum FilterCondition {
     // Character Types
     TextValue {
@@ -194,6 +212,12 @@ pub enum FilterCondition {
         column: String,
         operator: FilterOperator,
         value: Option<String>,
+    },
+
+    // Date ranges
+    DateRange {
+        column: String,
+        range_type: DateRangeType,
     },
 
     // Multi-value conditions for IN/NOT IN
@@ -404,6 +428,18 @@ impl FilterCondition {
                     }
                 }
                 None => Ok(format!("{} {}", column, operator.as_sql())),
+            },
+
+            FilterCondition::DateRange { column, range_type } => match range_type {
+                DateRangeType::Exact(timestamp) => Ok(format!("{} = '{}'", column, timestamp)),
+                DateRangeType::DateOnly(date) => Ok(format!(
+                    "{} >= '{} 00:00:00' AND {} < ('{}')::date + interval '1 day'",
+                    column, date, column, date
+                )),
+                DateRangeType::Range { start, end } => {
+                    Ok(format!("{} BETWEEN '{}' AND '{}'", column, start, end))
+                }
+                DateRangeType::Relative(expr) => Ok(format!("{} {} {}", column, ">", expr)),
             },
 
             FilterCondition::ArrayContains {
@@ -649,6 +685,37 @@ impl FilterCondition {
             value: value.map(ToString::to_string),
         }
     }
+
+    pub fn date_exact(column: &str, timestamp: &str) -> Self {
+        FilterCondition::DateRange {
+            column: column.to_string(),
+            range_type: DateRangeType::Exact(timestamp.to_string()),
+        }
+    }
+
+    pub fn date_only(column: &str, date: &str) -> Self {
+        FilterCondition::DateRange {
+            column: column.to_string(),
+            range_type: DateRangeType::DateOnly(date.to_string()),
+        }
+    }
+
+    pub fn date_range(column: &str, start: &str, end: &str) -> Self {
+        FilterCondition::DateRange {
+            column: column.to_string(),
+            range_type: DateRangeType::Range {
+                start: start.to_string(),
+                end: end.to_string(),
+            },
+        }
+    }
+
+    pub fn relative_date(column: &str, expr: &str) -> Self {
+        FilterCondition::DateRange {
+            column: column.to_string(),
+            range_type: DateRangeType::Relative(expr.to_string()),
+        }
+    }
 }
 
 impl fmt::Display for FilterCondition {
@@ -748,6 +815,28 @@ impl FilterBuilder {
                         value: filter.v.clone(),
                     },
                 },
+                Some(ColumnDef::Timestamp(name)) => {
+                    // Handle special date filter formats
+                    match filter.f.to_uppercase().as_str() {
+                        "DATE_ONLY" => FilterCondition::date_only(name, &filter.v),
+                        "DATE_RANGE" => {
+                            // Expect format: "start,end"
+                            let parts: Vec<&str> = filter.v.split(',').collect();
+                            if parts.len() == 2 {
+                                FilterCondition::date_range(name, parts[0], parts[1])
+                            } else {
+                                FilterCondition::date_exact(name, &filter.v)
+                            }
+                        }
+                        "RELATIVE" => FilterCondition::relative_date(name, &filter.v),
+                        // Default timestamp handling for standard operators
+                        _ => FilterCondition::timestamp(
+                            name,
+                            parse_operator(&filter.f),
+                            Some(&filter.v),
+                        ),
+                    }
+                }
                 Some(ColumnDef::Uuid(_)) => {
                     FilterCondition::uuid(&filter.n, parse_operator(&filter.f), Some(&filter.v))
                 }
@@ -787,11 +876,6 @@ impl FilterBuilder {
                         FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v))
                     }
                 }
-                Some(ColumnDef::Timestamp(_)) => FilterCondition::timestamp(
-                    &filter.n,
-                    parse_operator(&filter.f),
-                    Some(&filter.v),
-                ),
                 Some(ColumnDef::Text(_)) | Some(ColumnDef::Varchar(_)) => {
                     FilterCondition::text(&filter.n, parse_operator(&filter.f), Some(&filter.v))
                 }
@@ -881,7 +965,7 @@ impl FilterBuilder {
 }
 
 fn parse_operator(op: &str) -> FilterOperator {
-    match op {
+    match op.to_uppercase().as_str() {
         "LIKE" => FilterOperator::Like,
         "=" => FilterOperator::Equal,
         "!=" => FilterOperator::NotEqual,
@@ -897,6 +981,9 @@ fn parse_operator(op: &str) -> FilterOperator {
         "ENDS WITH" => FilterOperator::EndsWith,
         "CONTAINS" => FilterOperator::Contains,
         "OVERLAPS" => FilterOperator::Overlaps,
+        "DATE_ONLY" => FilterOperator::DateEqual,
+        "DATE_RANGE" => FilterOperator::DateRange,
+        "RELATIVE" => FilterOperator::RelativeDate,
         _ => FilterOperator::Equal,
     }
 }
@@ -1372,6 +1459,147 @@ mod tests {
 
         let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
         assert_eq!(sql, " WHERE services @> ARRAY['']::text[]");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_date_exact_filter() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("created_at", ColumnDef::Timestamp("created_at"));
+
+        let filters = vec![JsonFilter {
+            n: "created_at".to_string(),
+            f: "=".to_string(),
+            v: "2024-12-29 15:30:00".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE created_at = '2024-12-29 15:30:00'");
+        Ok(())
+    }
+
+    #[test]
+    fn test_date_only_filter() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("created_at", ColumnDef::Timestamp("created_at"));
+
+        let filters = vec![JsonFilter {
+            n: "created_at".to_string(),
+            f: "DATE_ONLY".to_string(),
+            v: "2024-12-29".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE created_at >= '2024-12-29 00:00:00' AND created_at < ('2024-12-29')::date + interval '1 day'"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_date_range_filter() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("created_at", ColumnDef::Timestamp("created_at"));
+
+        let filters = vec![JsonFilter {
+            n: "created_at".to_string(),
+            f: "DATE_RANGE".to_string(),
+            v: "2024-12-29 00:00:00,2024-12-29 23:59:59".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE created_at BETWEEN '2024-12-29 00:00:00' AND '2024-12-29 23:59:59'"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_relative_date_filter() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("created_at", ColumnDef::Timestamp("created_at"));
+
+        let filters = vec![JsonFilter {
+            n: "created_at".to_string(),
+            f: "RELATIVE".to_string(),
+            v: "now() - interval '1 day'".to_string(),
+            c: None,
+        }];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(sql, " WHERE created_at > now() - interval '1 day'");
+        Ok(())
+    }
+
+    #[test]
+    fn test_combined_date_filters() -> Result<()> {
+        let mut columns = setup_test_columns();
+        columns.insert("created_at", ColumnDef::Timestamp("created_at"));
+        columns.insert("updated_at", ColumnDef::Timestamp("updated_at"));
+
+        let filters = vec![
+            JsonFilter {
+                n: "created_at".to_string(),
+                f: "DATE_ONLY".to_string(),
+                v: "2024-12-29".to_string(),
+                c: None,
+            },
+            JsonFilter {
+                n: "updated_at".to_string(),
+                f: "RELATIVE".to_string(),
+                v: "now() - interval '1 hour'".to_string(),
+                c: Some("AND".to_string()),
+            },
+        ];
+
+        let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+        assert_eq!(
+            sql,
+            " WHERE (created_at >= '2024-12-29 00:00:00' AND created_at < ('2024-12-29')::date + interval '1 day' AND updated_at > now() - interval '1 hour')"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_case_insensitive_operators() -> Result<()> {
+        let mut columns = setup_test_columns();
+
+        // Test different case variations of LIKE
+        let operators = vec!["LIKE", "like", "Like", "LiKe"];
+
+        for op in operators {
+            let filters = vec![JsonFilter {
+                n: "name".to_string(),
+                f: op.to_string(),
+                v: "%John%".to_string(),
+                c: None,
+            }];
+
+            let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+            assert_eq!(sql, " WHERE LOWER(name) LIKE LOWER('%John%')");
+        }
+
+        // Test different case variations of CONTAINS for array
+        let operators = vec!["CONTAINS", "contains", "Contains", "CoNtAiNs"];
+        columns.insert("services", ColumnDef::TextArray("services"));
+
+        for op in operators {
+            let filters = vec![JsonFilter {
+                n: "services".to_string(),
+                f: op.to_string(),
+                v: "EPC".to_string(),
+                c: None,
+            }];
+
+            let sql = FilterBuilder::from_json_filters(&filters, true, &columns)?.build()?;
+            assert_eq!(sql, " WHERE services @> ARRAY['EPC']::text[]");
+        }
 
         Ok(())
     }
