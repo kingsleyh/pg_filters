@@ -289,6 +289,77 @@ fn test_filtering_with_is_not_null() -> Result<()> {
 }
 
 #[test]
+fn test_filtering_with_json_filter_in_operator() -> Result<()> {
+    use std::collections::HashMap;
+    use pg_filters::{ColumnDef, filtering::JsonFilter};
+    
+    // Setup test column definitions
+    let mut column_defs = HashMap::new();
+    column_defs.insert("status", ColumnDef::Text("status"));
+    column_defs.insert("age", ColumnDef::Integer("age"));
+    
+    // Create JSON filters with IN operator
+    let json_filters = vec![
+        JsonFilter {
+            n: "status".to_string(),
+            f: "in".to_string(),  // lowercase "in"
+            v: "active,pending,approved".to_string(), // comma-separated values
+            c: None,
+        },
+    ];
+    
+    // Build filter from JSON
+    let filter_builder = FilterBuilder::from_json_filters(&json_filters, true, &column_defs)?;
+    let sql = filter_builder.build()?;
+    
+    // Verify the SQL contains an IN clause
+    assert_eq!(sql, " WHERE LOWER(status) IN (LOWER('active'), LOWER('pending'), LOWER('approved'))");
+    Ok(())
+}
+
+#[test]
+fn test_filtering_with_json_filter_multiple_in_operators() -> Result<()> {
+    use std::collections::HashMap;
+    use pg_filters::{ColumnDef, filtering::JsonFilter};
+    
+    // Setup test column definitions
+    let mut column_defs = HashMap::new();
+    column_defs.insert("status", ColumnDef::Text("status"));
+    column_defs.insert("age", ColumnDef::Integer("age"));
+    column_defs.insert("type", ColumnDef::Text("type"));
+    
+    // Create JSON filters with IN operator for different column types
+    let json_filters = vec![
+        JsonFilter {
+            n: "status".to_string(),
+            f: "in".to_string(),
+            v: "active,pending".to_string(),
+            c: None,
+        },
+        JsonFilter {
+            n: "age".to_string(),
+            f: "in".to_string(),
+            v: "18,21,25".to_string(),
+            c: Some("AND".to_string()),
+        },
+        JsonFilter {
+            n: "type".to_string(),
+            f: "NOT IN".to_string(), // Test uppercase with NOT IN
+            v: "temp,test".to_string(),
+            c: Some("AND".to_string()),
+        },
+    ];
+    
+    // Build filter from JSON
+    let filter_builder = FilterBuilder::from_json_filters(&json_filters, false, &column_defs)?;
+    let sql = filter_builder.build()?;
+    
+    // Verify the SQL contains multiple IN clauses
+    assert_eq!(sql, " WHERE (status IN ('active', 'pending') AND age IN ('18', '21', '25') AND type NOT IN ('temp', 'test'))");
+    Ok(())
+}
+
+#[test]
 fn test_filtering_with_starts_with() -> Result<()> {
     let sql = FilterBuilder::new()
         .case_insensitive(true)

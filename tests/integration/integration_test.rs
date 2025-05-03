@@ -1,12 +1,13 @@
 use crate::integration::run_with_container;
 use chrono::NaiveDateTime;
 use pg_filters::{
-    filtering::{FilterCondition, FilterExpression, FilterOperator},
+    filtering::{FilterCondition, FilterExpression, FilterOperator, ColumnTypeInfo},
     sorting::{SortOrder, SortedColumn},
     ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
 };
 use std::collections::HashMap;
 use uuid::Uuid;
+use pg_filters::filtering::FilterBuilder;
 
 fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
     let mut columns = HashMap::new();
@@ -122,6 +123,7 @@ async fn test_date_and_uuid() {
                             "550e8400-e29b-41d4-a716-446655440001".to_string(),
                             "550e8400-e29b-41d4-a716-446655440003".to_string(),
                         ],
+                        column_type: Some(ColumnTypeInfo::Uuid),
                     }),
                 ],
                 columns.clone(),
@@ -472,6 +474,7 @@ async fn test_in() {
                     column: "age".to_string(),
                     operator: FilterOperator::In,
                     values: vec!["11".to_string(), "12".to_string(), "13".to_string()],
+                    column_type: Some(ColumnTypeInfo::Numeric),
                 })],
                 columns.clone(),
             )),
@@ -481,6 +484,75 @@ async fn test_in() {
 
         let sql = filters.sql().unwrap();
         println!("Generated SQL: {}", sql);
+
+        let query = format!("SELECT * FROM person {}", sql);
+        let client = pool.get().await.unwrap();
+        let rows = client.query(query.as_str(), &[]).await.unwrap();
+
+        let rows: Vec<(String, i32)> = rows
+            .iter()
+            .map(|row| {
+                let name: String = row.get("name");
+                let age: i32 = row.get("age");
+                (name, age)
+            })
+            .collect();
+
+        let expected_rows = vec![
+            ("name13".to_string(), 13),
+            ("name12".to_string(), 12),
+            ("name11".to_string(), 11),
+        ];
+
+        assert_eq!(rows, expected_rows);
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn test_json_filter_in() {
+    run_with_container(|pool| async move {
+        use pg_filters::filtering::JsonFilter;
+        
+        let columns = setup_test_columns();
+        
+        // Create JSON filters with IN operator
+        let json_filters = vec![
+            JsonFilter {
+                n: "age".to_string(),
+                f: "in".to_string(),
+                v: "11,12,13".to_string(), // comma-separated list
+                c: None,
+            },
+        ];
+        
+        // Build filter from JSON
+        let filter_builder = FilterBuilder::from_json_filters(&json_filters, false, &columns).unwrap();
+        
+        // Create PgFilters with the filter builder
+        let filters = PgFilters::new(
+            Some(PaginationOptions {
+                current_page: 1,
+                per_page: 10,
+                per_page_limit: 10,
+                total_records: 1000,
+            }),
+            vec![
+                SortedColumn {
+                    column: "age".to_string(),
+                    order: SortOrder::Desc,
+                },
+            ],
+            Some(FilteringOptions::new(
+                vec![filter_builder.root.unwrap()],
+                columns.clone(),
+            )),
+            columns,
+        )
+        .unwrap();
+
+        let sql = filters.sql().unwrap();
+        println!("Generated SQL with JSON IN filter: {}", sql);
 
         let query = format!("SELECT * FROM person {}", sql);
         let client = pool.get().await.unwrap();

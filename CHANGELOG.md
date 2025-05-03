@@ -1,3 +1,15 @@
+### 2024-09-03, Version v0.1.18
+### Major Updates
+- Fixed handling of the `IN` operator in JSON filters
+- Added column type awareness to properly handle case-insensitive filtering for different column types
+- Special handling for text vs. numeric/date/UUID/Boolean columns in InValues conditions
+
+### Key Fixes
+- Fixed incorrect application of LOWER() to non-text columns like numbers and UUIDs in IN clauses
+- Added proper support for comma-separated string values in "in" operator
+- Improved detection of column types when creating InValues conditions from JSON
+- Fixed test cases that depend on case-insensitive text comparisons
+
 ## 2024-08-18, Version v0.1.10
 ### Commits
 - [[`a5d9c50b7e`](https://github.com/kingsleyh/pg_filters/commit/a5d9c50b7ec655455420714c17d098da1eeee7e7)] bump version (kingsley.hendrickse)
