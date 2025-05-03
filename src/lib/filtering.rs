@@ -504,17 +504,34 @@ impl FilterCondition {
                     // Explicitly use the provided column type
                     Some(ColumnTypeInfo::Text) => true,
                     // For other explicit types, don't use LOWER
-                    Some(ColumnTypeInfo::Numeric) | Some(ColumnTypeInfo::Uuid) | 
-                    Some(ColumnTypeInfo::Date) | Some(ColumnTypeInfo::Boolean) => false,
+                    Some(ColumnTypeInfo::Numeric)
+                    | Some(ColumnTypeInfo::Uuid)
+                    | Some(ColumnTypeInfo::Date)
+                    | Some(ColumnTypeInfo::Boolean) => false,
                     // For unknown types or no type info provided, infer from column name
                     _ => {
                         // Conservative approach - only treat as text if it's clearly a text column
-                        !["id", "uuid", "age", "created_at", "updated_at", 
-                          "count", "amount", "price", "fee", "total", "number", 
-                          "_id", "_at", "_on"].iter().any(|suffix| column.ends_with(suffix))
+                        ![
+                            "id",
+                            "uuid",
+                            "age",
+                            "created_at",
+                            "updated_at",
+                            "count",
+                            "amount",
+                            "price",
+                            "fee",
+                            "total",
+                            "number",
+                            "_id",
+                            "_at",
+                            "_on",
+                        ]
+                        .iter()
+                        .any(|suffix| column.ends_with(suffix))
                     }
                 };
-                
+
                 let formatted_values = values
                     .iter()
                     .map(|v| {
@@ -528,13 +545,13 @@ impl FilterCondition {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
-                
+
                 let column_name = if case_insensitive && is_text_column {
                     format!("LOWER({})", column)
                 } else {
                     column.to_string()
                 };
-                
+
                 Ok(format!(
                     "{} {} ({})",
                     column_name,
@@ -721,8 +738,13 @@ impl FilterCondition {
             column_type: None, // No type info provided - will be inferred
         }
     }
-    
-    pub fn in_values_with_type(column: &str, operator: FilterOperator, values: Vec<&str>, column_type: ColumnTypeInfo) -> Self {
+
+    pub fn in_values_with_type(
+        column: &str,
+        operator: FilterOperator,
+        values: Vec<&str>,
+        column_type: ColumnTypeInfo,
+    ) -> Self {
         FilterCondition::InValues {
             column: column.to_string(),
             operator,
@@ -853,33 +875,26 @@ impl FilterBuilder {
             // Special handling for IN and NOT IN operators
             if filter.f.to_uppercase() == "IN" || filter.f.to_uppercase() == "NOT IN" {
                 // Split comma-separated values and create InValues condition
-                let values = filter.v.split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect();
-                
+                let values = filter.v.split(',').map(|s| s.trim().to_string()).collect();
+
                 // Determine the column type from the column definitions
                 let column_type = match column_defs.get(filter.n.as_str()) {
-                    Some(ColumnDef::Text(_)) | Some(ColumnDef::Varchar(_)) | Some(ColumnDef::Char(_)) => {
-                        Some(ColumnTypeInfo::Text)
-                    },
-                    Some(ColumnDef::Integer(_)) | Some(ColumnDef::BigInt(_)) | 
-                    Some(ColumnDef::SmallInt(_)) | Some(ColumnDef::Real(_)) | 
-                    Some(ColumnDef::DoublePrecision(_)) => {
-                        Some(ColumnTypeInfo::Numeric)
-                    },
-                    Some(ColumnDef::Uuid(_)) => {
-                        Some(ColumnTypeInfo::Uuid)
-                    },
-                    Some(ColumnDef::Timestamp(_)) | Some(ColumnDef::TimestampTz(_)) | 
-                    Some(ColumnDef::Date(_)) => {
-                        Some(ColumnTypeInfo::Date)
-                    },
-                    Some(ColumnDef::Boolean(_)) => {
-                        Some(ColumnTypeInfo::Boolean)
-                    },
+                    Some(ColumnDef::Text(_))
+                    | Some(ColumnDef::Varchar(_))
+                    | Some(ColumnDef::Char(_)) => Some(ColumnTypeInfo::Text),
+                    Some(ColumnDef::Integer(_))
+                    | Some(ColumnDef::BigInt(_))
+                    | Some(ColumnDef::SmallInt(_))
+                    | Some(ColumnDef::Real(_))
+                    | Some(ColumnDef::DoublePrecision(_)) => Some(ColumnTypeInfo::Numeric),
+                    Some(ColumnDef::Uuid(_)) => Some(ColumnTypeInfo::Uuid),
+                    Some(ColumnDef::Timestamp(_))
+                    | Some(ColumnDef::TimestampTz(_))
+                    | Some(ColumnDef::Date(_)) => Some(ColumnTypeInfo::Date),
+                    Some(ColumnDef::Boolean(_)) => Some(ColumnTypeInfo::Boolean),
                     _ => Some(ColumnTypeInfo::Other),
                 };
-                
+
                 return FilterCondition::InValues {
                     column: filter.n.clone(),
                     operator: parse_operator(&filter.f),
@@ -887,7 +902,7 @@ impl FilterBuilder {
                     column_type,
                 };
             }
-            
+
             match column_defs.get(filter.n.as_str()) {
                 Some(ColumnDef::TextArray(_)) => match filter.f.to_uppercase().as_str() {
                     "CONTAINS" => FilterCondition::ArrayContains {

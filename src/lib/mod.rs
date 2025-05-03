@@ -6,7 +6,8 @@ pub mod pagination;
 pub mod sorting;
 
 use crate::filtering::{
-    FilterBuilder, FilterCondition, FilterExpression, FilterOperator, JsonFilter, LogicalOperator, ColumnTypeInfo,
+    ColumnTypeInfo, FilterBuilder, FilterCondition, FilterExpression, FilterOperator, JsonFilter,
+    LogicalOperator,
 };
 use crate::pagination::Paginate;
 use crate::sorting::{SortedColumn, Sorting};
@@ -93,23 +94,22 @@ impl ColumnDef {
 
             // Determine the column type based on the current ColumnDef
             let column_type = match self {
-                ColumnDef::Text(_) | ColumnDef::Varchar(_) | ColumnDef::Char(_) => 
-                    Some(ColumnTypeInfo::Text),
-                ColumnDef::Integer(_) | ColumnDef::BigInt(_) | 
-                ColumnDef::SmallInt(_) | ColumnDef::Real(_) | 
-                ColumnDef::DoublePrecision(_) => 
-                    Some(ColumnTypeInfo::Numeric),
-                ColumnDef::Uuid(_) => 
-                    Some(ColumnTypeInfo::Uuid),
-                ColumnDef::Timestamp(_) | ColumnDef::TimestampTz(_) | 
-                ColumnDef::Date(_) =>
-                    Some(ColumnTypeInfo::Date),
-                ColumnDef::Boolean(_) => 
-                    Some(ColumnTypeInfo::Boolean),
-                _ => 
-                    Some(ColumnTypeInfo::Other),
+                ColumnDef::Text(_) | ColumnDef::Varchar(_) | ColumnDef::Char(_) => {
+                    Some(ColumnTypeInfo::Text)
+                }
+                ColumnDef::Integer(_)
+                | ColumnDef::BigInt(_)
+                | ColumnDef::SmallInt(_)
+                | ColumnDef::Real(_)
+                | ColumnDef::DoublePrecision(_) => Some(ColumnTypeInfo::Numeric),
+                ColumnDef::Uuid(_) => Some(ColumnTypeInfo::Uuid),
+                ColumnDef::Timestamp(_) | ColumnDef::TimestampTz(_) | ColumnDef::Date(_) => {
+                    Some(ColumnTypeInfo::Date)
+                }
+                ColumnDef::Boolean(_) => Some(ColumnTypeInfo::Boolean),
+                _ => Some(ColumnTypeInfo::Other),
             };
-            
+
             return Ok(FilterCondition::InValues {
                 column: self.get_column_name(),
                 operator: op,

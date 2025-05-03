@@ -1,13 +1,13 @@
 use crate::integration::run_with_container;
 use chrono::NaiveDateTime;
+use pg_filters::filtering::FilterBuilder;
 use pg_filters::{
-    filtering::{FilterCondition, FilterExpression, FilterOperator, ColumnTypeInfo},
+    filtering::{ColumnTypeInfo, FilterCondition, FilterExpression, FilterOperator},
     sorting::{SortOrder, SortedColumn},
     ColumnDef, FilteringOptions, PaginationOptions, PgFilters,
 };
 use std::collections::HashMap;
 use uuid::Uuid;
-use pg_filters::filtering::FilterBuilder;
 
 fn setup_test_columns() -> HashMap<&'static str, ColumnDef> {
     let mut columns = HashMap::new();
@@ -513,22 +513,21 @@ async fn test_in() {
 async fn test_json_filter_in() {
     run_with_container(|pool| async move {
         use pg_filters::filtering::JsonFilter;
-        
+
         let columns = setup_test_columns();
-        
+
         // Create JSON filters with IN operator
-        let json_filters = vec![
-            JsonFilter {
-                n: "age".to_string(),
-                f: "in".to_string(),
-                v: "11,12,13".to_string(), // comma-separated list
-                c: None,
-            },
-        ];
-        
+        let json_filters = vec![JsonFilter {
+            n: "age".to_string(),
+            f: "in".to_string(),
+            v: "11,12,13".to_string(), // comma-separated list
+            c: None,
+        }];
+
         // Build filter from JSON
-        let filter_builder = FilterBuilder::from_json_filters(&json_filters, false, &columns).unwrap();
-        
+        let filter_builder =
+            FilterBuilder::from_json_filters(&json_filters, false, &columns).unwrap();
+
         // Create PgFilters with the filter builder
         let filters = PgFilters::new(
             Some(PaginationOptions {
@@ -537,12 +536,10 @@ async fn test_json_filter_in() {
                 per_page_limit: 10,
                 total_records: 1000,
             }),
-            vec![
-                SortedColumn {
-                    column: "age".to_string(),
-                    order: SortOrder::Desc,
-                },
-            ],
+            vec![SortedColumn {
+                column: "age".to_string(),
+                order: SortOrder::Desc,
+            }],
             Some(FilteringOptions::new(
                 vec![filter_builder.root.unwrap()],
                 columns.clone(),
